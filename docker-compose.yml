@@ -20,6 +20,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://poultry:poultry@db:5432/poultry
       JWT_SECRET: dev-secret-change-me
+      SEED_DEV_DATA: "1"
     ports:
       - "8000:8000"
     depends_on:
