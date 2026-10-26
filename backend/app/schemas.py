@@ -1,5 +1,6 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -107,3 +108,26 @@ class FlockUpdate(BaseModel):
     placement_date: date | None = None
     initial_bird_count: int | None = Field(default=None, gt=0)
     is_active: bool | None = None
+
+
+# ---------- daily records ----------
+
+
+class RecordIn(BaseModel):
+    """A daily record as sent by a device. Business rules live in app.validation."""
+
+    id: uuid.UUID
+    house_id: uuid.UUID
+    record_date: date
+    eggs_good: int
+    eggs_cracked: int
+    eggs_rejected: int
+    feed_kg: Decimal
+    water_liters: Decimal | None = None
+    dead: int
+    culled: int
+    notes: str = Field(default="", max_length=500)
+    # Server version the device last saw; 0 for a record created on the device.
+    base_version: int = Field(default=0, ge=0)
+    # When the worker saved it on the device.
+    client_updated_at: datetime
