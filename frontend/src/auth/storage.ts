@@ -18,9 +18,17 @@ const KEY = 'poultry.session'
 
 // The session lives in localStorage so a worker can open the app offline after
 // logging in once. Storage can be blocked (private mode), so every access is guarded.
-export function loadSession(): Session | null {
+export function readRawSession(): string | null {
   try {
-    const raw = localStorage.getItem(KEY)
+    return localStorage.getItem(KEY)
+  } catch {
+    return null
+  }
+}
+
+export function loadSession(): Session | null {
+  const raw = readRawSession()
+  try {
     return raw ? (JSON.parse(raw) as Session) : null
   } catch {
     return null
