@@ -76,7 +76,9 @@ export default function RecordForm() {
   if (!house || !flock) {
     return (
       <div className="alert">
-        Kandang tidak ditemukan atau belum punya flock aktif. <Link to="/">Kembali</Link>
+        Kandang tidak ditemukan atau belum punya flock aktif. <Link className="tap-link" to="/">
+          Kembali
+        </Link>
       </div>
     )
   }
@@ -120,7 +122,9 @@ export default function RecordForm() {
   return (
     <form className="stack" onSubmit={submit} noValidate>
       <div>
-        <Link to={date === today ? '/' : '/?tanggal=kemarin'}>← Kembali</Link>
+        <Link className="tap-link" to={date === today ? '/' : '/?tanggal=kemarin'}>
+          ← Kembali
+        </Link>
         <h1 style={{ marginTop: 8 }}>{house.name}</h1>
         <p className="muted" style={{ margin: 0 }}>
           {formatDate(date)} · {existing ? 'Ubah data' : 'Data baru'} · Ayam hidup awal hari:{' '}
@@ -131,7 +135,9 @@ export default function RecordForm() {
       {errors.record_date && <div className="alert">{errors.record_date}</div>}
       {inConflict && (
         <div className="alert warning">
-          Data ini bentrok dengan data pekerja lain. <Link to="/konflik">Selesaikan dulu</Link>{' '}
+          Data ini bentrok dengan data pekerja lain. <Link className="tap-link" to="/konflik">
+            Selesaikan dulu
+          </Link>{' '}
           sebelum mengubahnya.
         </div>
       )}

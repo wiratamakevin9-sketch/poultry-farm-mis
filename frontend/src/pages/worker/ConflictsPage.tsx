@@ -46,7 +46,9 @@ export default function ConflictsPage() {
 
   return (
     <>
-      <Link to="/">← Kembali</Link>
+      <Link className="tap-link" to="/">
+        ← Kembali
+      </Link>
       <h1 style={{ marginTop: 8 }}>Data bentrok</h1>
       <p className="muted">
         Bandingkan data Anda dengan data di server, lalu pilih yang benar. Data yang tidak

@@ -48,7 +48,9 @@ export default function WorkerHome() {
       {sync.conflicts > 0 && (
         <div className="alert warning" style={{ marginBottom: 12 }}>
           Ada {sync.conflicts} data yang bentrok dengan data pekerja lain.{' '}
-          <Link to="/konflik">Selesaikan sekarang</Link>
+          <Link className="tap-link" to="/konflik">
+            Selesaikan sekarang
+          </Link>
         </div>
       )}
 

@@ -140,3 +140,26 @@ test('main page opens within 3 seconds on a slow phone after the first visit', a
   console.log(`Main page ready in ${elapsed} ms (4x CPU slowdown, slow network)`)
   expect(elapsed).toBeLessThan(3000)
 })
+
+test('worker screens fit 360 px and every touch target is at least 44 px', async ({ page }) => {
+  async function check(screen: string) {
+    const problems = await page.evaluate(() => {
+      const found: string[] = []
+      if (document.documentElement.scrollWidth > window.innerWidth) found.push('horizontal scroll')
+      for (const el of document.querySelectorAll<HTMLElement>('button, a, input, select, textarea')) {
+        const box = el.getBoundingClientRect()
+        if (box.width === 0) continue // hidden
+        if (box.height < 44) found.push(`${el.tagName} "${el.textContent?.trim()}" is ${box.height}px`)
+      }
+      return found
+    })
+    expect(problems, screen).toEqual([])
+  }
+
+  await login(page, 'pekerja1', 'pekerja123')
+  await expect(page.getByRole('button', { name: /Kandang 3/ })).toBeVisible()
+  await check('home')
+  await page.getByRole('button', { name: /Kandang 3/ }).click()
+  await expect(page.getByRole('heading', { name: 'Kandang 3' })).toBeVisible()
+  await check('record form')
+})

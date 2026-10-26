@@ -453,3 +453,11 @@ th.num {
   flex-direction: column;
   gap: 4px;
 }
+
+/* Text links that are tapped on a phone still get a 44 px touch target. */
+.tap-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+}
