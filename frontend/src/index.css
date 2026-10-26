@@ -65,7 +65,7 @@ a {
   z-index: 10;
   background: var(--color-primary);
   color: var(--color-on-primary);
-  padding: 8px 16px;
+  padding: 4px 16px 8px;
 }
 
 .app-header__row {
@@ -79,6 +79,11 @@ a {
 .app-header__title {
   font-weight: 700;
   font-size: 1.05rem;
+}
+
+.app-header__user {
+  color: #dcfce7;
+  font-size: 0.9rem;
 }
 
 .app-nav {
@@ -315,4 +320,131 @@ th.num {
 
 .item-list > li:last-child {
   border-bottom: none;
+}
+
+/* ---------- sync status ---------- */
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
+
+.sync-status__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+}
+
+.sync-status__time {
+  opacity: 0.85;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot--online {
+  background: #86efac;
+}
+
+.dot--offline {
+  background: #fbbf24;
+}
+
+/* ---------- worker ---------- */
+
+.house-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: var(--color-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  min-height: 64px;
+  margin-bottom: 10px;
+}
+
+.house-button:hover {
+  background: #f7fdf9;
+}
+
+.house-button__name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.segmented button[aria-pressed='false'] {
+  background: #fff;
+  color: var(--color-primary);
+}
+
+.preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.preview > div {
+  background: var(--color-muted);
+  border-radius: 10px;
+  padding: 8px 4px;
+}
+
+.preview strong {
+  display: block;
+  font-size: 1.2rem;
+  color: var(--color-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--color-background);
+  padding: 12px 0;
+}
+
+.sticky-actions button {
+  width: 100%;
+}
+
+.compare th,
+.compare td {
+  white-space: normal;
+}
+
+.compare td.diff {
+  background: #fef3c7;
+  font-weight: 700;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }

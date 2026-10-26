@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import HousesPage from './pages/owner/HousesPage'
 import UsersPage from './pages/owner/UsersPage'
+import WorkerApp from './pages/worker/WorkerApp'
 
 const OWNER_LINKS = [
   { to: '/pemilik/kandang', label: 'Kandang' },
@@ -27,10 +28,5 @@ export default function App() {
     )
   }
 
-  return (
-    <Layout user={session.user} links={[]}>
-      <h1>Catat data harian</h1>
-      <p className="muted">Form pencatatan dibuat pada langkah 8.</p>
-    </Layout>
-  )
+  return <WorkerApp user={session.user} />
 }

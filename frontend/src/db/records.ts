@@ -44,3 +44,19 @@ export async function findRecord(
 ): Promise<LocalRecord | undefined> {
   return db.records.where('[house_id+record_date]').equals([houseId, recordDate]).first()
 }
+
+/**
+ * Live birds at the start of a day, from the records on this phone:
+ * the flock's initial count minus dead and culled birds on earlier days.
+ */
+export async function liveBirdsAtStart(
+  db: FarmDb,
+  flockId: string,
+  initialBirdCount: number,
+  day: string,
+): Promise<number> {
+  const earlier = await db.records
+    .filter((r) => r.flock_id === flockId && r.record_date < day)
+    .toArray()
+  return earlier.reduce((alive, r) => alive - r.dead - r.culled, initialBirdCount)
+}
