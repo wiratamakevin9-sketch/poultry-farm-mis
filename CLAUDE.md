@@ -36,6 +36,12 @@ chicken houses is weak or absent, so data entry MUST work offline.
   - HDP (hen-day production) = eggs / live birds that day x 100
   - FCR = kg feed / kg eggs (default average egg weight 62 g, configurable)
   - Mortality rate = dead birds / bird count at start of period x 100
+- Business dates use the farm time zone Asia/Makassar (WITA, UTC+8): "today", the
+  no-future-date rule and the "edit today or yesterday" rule are all based on WITA.
+- Sync conflicts (one record edited on two devices, or two records for the same house and
+  day) are resolved first by the worker on their own phone. Only conflicts still open
+  after the edit window (today/yesterday) go to the owner. The losing copy is always kept.
+  See docs/decisions/0001-sync-conflict-resolution.md.
 - AI features must never present a disease diagnosis. Health concerns are referred
   to the veterinarian.
 - Keep it simple: this is a 2-person student project. Prefer clear code over clever code.
