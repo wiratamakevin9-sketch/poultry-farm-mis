@@ -38,6 +38,8 @@ chicken houses is weak or absent, so data entry MUST work offline.
   - Mortality rate = dead birds / bird count at start of period x 100
 - Business dates use the farm time zone Asia/Makassar (WITA, UTC+8): "today", the
   no-future-date rule and the "edit today or yesterday" rule are all based on WITA.
+- Workers may only enter or edit the record for today or yesterday, judged by when the
+  record was saved on the phone (so a late sync does not reject it).
 - Sync conflicts (one record edited on two devices, or two records for the same house and
   day) are resolved first by the worker on their own phone. Only conflicts still open
   after the edit window (today/yesterday) go to the owner. The losing copy is always kept.
