@@ -88,7 +88,7 @@ a {
 
 .app-nav {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
@@ -96,9 +96,10 @@ a {
 .app-nav a {
   color: var(--color-on-primary);
   text-decoration: none;
-  padding: 10px 14px;
+  padding: 10px 9px;
   border-radius: 999px;
   white-space: nowrap;
+  font-size: 0.95rem;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -177,8 +178,12 @@ input[aria-invalid='true'] {
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
+}
+
+.grid-2 input {
+  min-width: 0;
 }
 
 button,

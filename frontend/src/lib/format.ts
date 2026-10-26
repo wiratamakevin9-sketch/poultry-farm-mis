@@ -16,3 +16,16 @@ export function formatNumber(value: number, fractionDigits = 0): string {
 export function formatDate(isoDate: string): string {
   return dateFormat.format(new Date(`${isoDate}T00:00:00Z`))
 }
+
+const dateTimeFormat = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Asia/Makassar',
+})
+
+/** Date and time at the farm (WITA), e.g. "26 Okt 14.05". */
+export function formatDateTime(iso: string): string {
+  return dateTimeFormat.format(new Date(iso))
+}
