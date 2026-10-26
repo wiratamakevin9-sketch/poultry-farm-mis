@@ -37,8 +37,14 @@ def _record(db: Session, record_date: date) -> DailyRecord:
 
 def test_only_one_active_flock_per_house(db: Session) -> None:
     house, _ = _house_and_flock(db)
-    db.add(Flock(house_id=house.id, breed="Lohmann", placement_date=date(2026, 5, 1),
-                 initial_bird_count=100))
+    db.add(
+        Flock(
+            house_id=house.id,
+            breed="Lohmann",
+            placement_date=date(2026, 5, 1),
+            initial_bird_count=100,
+        )
+    )
     with pytest.raises(IntegrityError):
         db.commit()
 

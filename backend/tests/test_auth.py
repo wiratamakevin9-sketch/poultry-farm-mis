@@ -58,8 +58,13 @@ def test_access_token_cannot_be_used_as_refresh(client: TestClient) -> None:
 def test_expired_token_is_rejected(client: TestClient, db: Session) -> None:
     user = db.scalar(select(User).where(User.username == "pekerja1"))
     expired = jwt.encode(
-        {"sub": str(user.id), "role": "WORKER", "tv": 0, "type": "access",
-         "exp": datetime.now(UTC) - timedelta(minutes=1)},
+        {
+            "sub": str(user.id),
+            "role": "WORKER",
+            "tv": 0,
+            "type": "access",
+            "exp": datetime.now(UTC) - timedelta(minutes=1),
+        },
         settings.jwt_secret,
         algorithm=settings.jwt_algorithm,
     )
