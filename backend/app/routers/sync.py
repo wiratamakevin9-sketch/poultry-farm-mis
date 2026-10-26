@@ -104,7 +104,6 @@ def _push_one(db: Session, raw: dict, user: User) -> PushResult:
             live_birds_on(db, existing.flock_id, existing.record_date),
             today=farm_today(),
             edited_on=edited_on,
-            is_edit=True,
         )
         if errors:
             return PushResult(id=raw_id, status="rejected", errors=errors)
@@ -128,7 +127,6 @@ def _push_one(db: Session, raw: dict, user: User) -> PushResult:
         live_birds_on(db, flock.id, incoming.record_date),
         today=farm_today(),
         edited_on=edited_on,
-        is_edit=False,
     )
     if errors:
         return PushResult(id=raw_id, status="rejected", errors=errors)

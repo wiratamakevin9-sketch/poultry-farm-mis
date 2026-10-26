@@ -32,14 +32,14 @@ def validate_record(
     live_birds: int,
     today: date,
     edited_on: date,
-    is_edit: bool,
+    check_window: bool = True,
 ) -> dict[str, str]:
     """Return {field: message} for every broken rule; empty means valid.
 
     live_birds: live birds at the start of the record's day.
     today: today's date at the farm, from the server clock.
     edited_on: farm date when the worker saved the record on the device.
-    is_edit: True when the record already exists on the server.
+    check_window: False only when the owner resolves an old conflict.
     """
     errors: dict[str, str] = {}
 
@@ -71,9 +71,9 @@ def validate_record(
 
     if record.record_date > today:
         errors["record_date"] = "Tanggal tidak boleh di masa depan."
-    elif is_edit and record.record_date < edited_on - timedelta(days=1):
+    elif check_window and record.record_date < edited_on - timedelta(days=1):
         # Judged by when the worker saved it, so an edit made offline yesterday is
         # still accepted when the phone only syncs today.
-        errors["record_date"] = "Catatan hanya bisa diubah untuk hari ini atau kemarin."
+        errors["record_date"] = "Catatan hanya bisa diisi atau diubah untuk hari ini atau kemarin."
 
     return errors

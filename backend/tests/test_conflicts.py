@@ -1,5 +1,5 @@
 import uuid
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -12,14 +12,19 @@ from tests.test_sync import TODAY, house_id, new_record, push
 def make_conflict(client: TestClient, days_ago: int = 0) -> tuple[dict, dict, dict]:
     """pekerja1 saves a record; pekerja2 sends a different one for the same house and day.
 
+    With days_ago, both phones saved the record that day while offline and sync only now.
+
     Returns (conflict as seen by pekerja2, pekerja1 headers, pekerja2 headers).
     """
     first_headers = auth_headers(client, "pekerja1")
     second_headers = auth_headers(client, "pekerja2")
     house = house_id(client, first_headers)
     day = (TODAY - timedelta(days=days_ago)).isoformat()
-    push(client, first_headers, new_record(house, record_date=day, eggs_good=4000))
-    push(client, second_headers, new_record(house, record_date=day, eggs_good=4100))
+    saved_at = (datetime.now(UTC) - timedelta(days=days_ago)).isoformat()
+    for headers, eggs in ((first_headers, 4000), (second_headers, 4100)):
+        record = new_record(house, record_date=day, eggs_good=eggs, client_updated_at=saved_at)
+        [result] = push(client, headers, record)
+        assert result["status"] in ("accepted", "conflict"), result
     [conflict] = client.get("/api/conflicts", headers=second_headers).json()
     return conflict, first_headers, second_headers
 

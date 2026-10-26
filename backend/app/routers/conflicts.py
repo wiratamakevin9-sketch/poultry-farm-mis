@@ -113,7 +113,7 @@ def resolve_conflict(
             live_birds_on(db, record.flock_id, record.record_date),
             today=farm_today(),
             edited_on=farm_today(),
-            is_edit=False,  # who may resolve, and when, is checked by can_resolve
+            check_window=False,  # who may resolve, and when, is checked by can_resolve
         )
         if errors:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, " ".join(errors.values()))

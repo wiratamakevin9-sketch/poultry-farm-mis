@@ -282,3 +282,13 @@ def test_owner_records_have_hdp_and_feed_per_bird(
 
 def test_worker_cannot_list_owner_records(client: TestClient, worker_headers: dict) -> None:
     assert client.get("/api/records", headers=worker_headers).status_code == 403
+
+
+def test_new_record_older_than_yesterday_rejected(client: TestClient, worker_headers: dict) -> None:
+    house = house_id(client, worker_headers)
+    old = (TODAY - timedelta(days=2)).isoformat()
+    [result] = push(client, worker_headers, new_record(house, record_date=old))
+    assert result["status"] == "rejected"
+    assert result["errors"]["record_date"] == (
+        "Catatan hanya bisa diisi atau diubah untuk hari ini atau kemarin."
+    )

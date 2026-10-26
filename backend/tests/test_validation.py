@@ -25,10 +25,8 @@ def make(**changes) -> RecordIn:
     return RecordIn(**(values | changes))
 
 
-def check(
-    record: RecordIn, live_birds: int = 5000, edited_on: date = TODAY, is_edit: bool = False
-) -> dict[str, str]:
-    return validate_record(record, live_birds, TODAY, edited_on, is_edit)
+def check(record: RecordIn, live_birds: int = 5000, edited_on: date = TODAY) -> dict[str, str]:
+    return validate_record(record, live_birds, TODAY, edited_on)
 
 
 def test_valid_record_has_no_errors() -> None:
@@ -81,20 +79,23 @@ def test_future_date_rejected() -> None:
     assert errors["record_date"] == "Tanggal tidak boleh di masa depan."
 
 
-def test_edit_allowed_for_today_and_yesterday_only() -> None:
-    assert check(make(record_date=date(2026, 10, 25)), is_edit=True) == {}
-    errors = check(make(record_date=date(2026, 10, 24)), is_edit=True)
-    assert errors["record_date"] == "Catatan hanya bisa diubah untuk hari ini atau kemarin."
+def test_only_today_and_yesterday_allowed() -> None:
+    assert check(make(record_date=date(2026, 10, 25))) == {}
+    errors = check(make(record_date=date(2026, 10, 24)))
+    assert (
+        errors["record_date"] == "Catatan hanya bisa diisi atau diubah untuk hari ini atau kemarin."
+    )
 
 
 def test_edit_made_offline_yesterday_is_accepted_today() -> None:
     # Worker edited the 24th on the 25th while offline; the phone syncs on the 26th.
     record = make(record_date=date(2026, 10, 24))
-    assert check(record, edited_on=date(2026, 10, 25), is_edit=True) == {}
+    assert check(record, edited_on=date(2026, 10, 25)) == {}
 
 
-def test_new_record_for_older_date_is_allowed() -> None:
-    assert check(make(record_date=date(2026, 10, 20)), is_edit=False) == {}
+def test_owner_resolving_old_conflict_skips_window() -> None:
+    record = make(record_date=date(2026, 10, 20))
+    assert validate_record(record, 5000, TODAY, TODAY, check_window=False) == {}
 
 
 def test_farm_date_uses_wita() -> None:
