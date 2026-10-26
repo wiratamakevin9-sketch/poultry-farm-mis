@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import Role
+from app.models import ConflictReason, ConflictResolution, ConflictStatus, Role
 
 
 class ORMModel(BaseModel):
@@ -131,3 +131,102 @@ class RecordIn(BaseModel):
     base_version: int = Field(default=0, ge=0)
     # When the worker saved it on the device.
     client_updated_at: datetime
+
+
+class RecordOut(ORMModel):
+    id: uuid.UUID
+    house_id: uuid.UUID
+    flock_id: uuid.UUID
+    record_date: date
+    eggs_good: int
+    eggs_cracked: int
+    eggs_rejected: int
+    feed_kg: Decimal
+    water_liters: Decimal | None
+    dead: int
+    culled: int
+    notes: str
+    version: int
+    change_seq: int
+    created_by: uuid.UUID
+    updated_by: uuid.UUID
+    client_updated_at: datetime
+    server_updated_at: datetime
+    deleted: bool = False
+
+
+class OwnerRecordOut(RecordOut):
+    house_name: str
+    created_by_name: str
+    updated_by_name: str
+    live_birds: int  # at the start of the day
+    hdp: float  # hen-day production, %
+    feed_per_bird_g: float
+
+
+# ---------- sync ----------
+
+
+class PushRequest(BaseModel):
+    # Raw dicts so one bad record is rejected on its own instead of failing the batch.
+    records: list[dict] = Field(max_length=500)
+
+
+class PushResult(BaseModel):
+    id: str
+    status: str  # accepted | conflict | rejected
+    version: int | None = None
+    conflict_id: uuid.UUID | None = None
+    errors: dict[str, str] = {}
+
+
+class PushResponse(BaseModel):
+    results: list[PushResult]
+
+
+class ConflictOut(ORMModel):
+    id: uuid.UUID
+    record_id: uuid.UUID
+    device_record_id: uuid.UUID
+    house_id: uuid.UUID
+    house_name: str
+    record_date: date
+    reason: ConflictReason
+    status: ConflictStatus
+    resolution: ConflictResolution | None
+    device_payload: dict
+    server_record: RecordOut
+    submitted_by: uuid.UUID
+    submitted_by_name: str
+    created_at: datetime
+    # True when the person asking may resolve it now (worker: own conflict within the
+    # edit window; owner: after the edit window).
+    can_resolve: bool
+
+
+class PullResponse(BaseModel):
+    records: list[RecordOut]
+    cursor: int
+    has_more: bool
+    houses: list[HouseOut]
+    conflicts: list[ConflictOut]
+    server_today: date
+
+
+class RecordValues(BaseModel):
+    eggs_good: int
+    eggs_cracked: int
+    eggs_rejected: int
+    feed_kg: Decimal
+    water_liters: Decimal | None = None
+    dead: int
+    culled: int
+    notes: str = Field(default="", max_length=500)
+
+
+class ResolveRequest(BaseModel):
+    resolution: ConflictResolution
+    # The server version shown on screen; refused if the record changed since.
+    server_version: int
+    # Required for MERGED.
+    values: RecordValues | None = None
