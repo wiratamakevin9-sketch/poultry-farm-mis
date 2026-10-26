@@ -48,3 +48,24 @@ def db() -> Iterator[Session]:
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
+
+
+def login(client: TestClient, username: str, password: str | None = None) -> dict:
+    password = password or ("pemilik123" if username == "pemilik" else "pekerja123")
+    response = client.post("/api/auth/login", json={"username": username, "password": password})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def auth_headers(client: TestClient, username: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {login(client, username)['access_token']}"}
+
+
+@pytest.fixture
+def owner_headers(client: TestClient) -> dict[str, str]:
+    return auth_headers(client, "pemilik")
+
+
+@pytest.fixture
+def worker_headers(client: TestClient) -> dict[str, str]:
+    return auth_headers(client, "pekerja1")
