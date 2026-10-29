@@ -4,7 +4,7 @@ import { saveSession, type SessionUser } from '../auth/storage'
 
 interface Props {
   user: SessionUser
-  links: { to: string; label: string }[]
+  links: { to: string; label: ReactNode }[]
   status?: ReactNode
   logoutWarning?: string
   children: ReactNode

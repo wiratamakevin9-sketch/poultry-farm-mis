@@ -88,6 +88,7 @@ a {
 
 .app-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -583,4 +584,14 @@ a.button {
 a.button.secondary {
   background: #fff;
   color: var(--color-primary);
+}
+
+.nav-badge {
+  margin-left: 6px;
+  background: #fbbf24;
+  color: #422006;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
 }

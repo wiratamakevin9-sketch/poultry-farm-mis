@@ -60,3 +60,23 @@ export interface ServerPhoto {
   observation_id: string | null
   taken_at: string
 }
+
+/** A health observation as the owner sees it (UC14). */
+export interface OwnerObservation {
+  id: string
+  house_id: string
+  house_name: string
+  observed_at: string
+  symptoms: string[]
+  other_symptoms: string
+  affected_count: number | null
+  notes: string
+  status: 'NEW' | 'SEEN' | 'FORWARDED' | 'CLOSED'
+  forwarded_via: 'WHATSAPP' | 'EMAIL' | 'OTHER' | null
+  vet_advice: string
+  seen_at: string | null
+  forwarded_at: string | null
+  closed_at: string | null
+  created_by_name: string
+  photo_ids: string[]
+}
