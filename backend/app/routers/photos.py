@@ -8,7 +8,15 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.deps import CurrentUser, DbSession, OwnerUser, WorkerUser
-from app.models import ChickenHouse, Photo, PhotoKind, Role, TrayCategory
+from app.models import (
+    ChickenHouse,
+    HealthObservation,
+    Photo,
+    PhotoKind,
+    Role,
+    TrayCategory,
+    User,
+)
 from app.photo_files import InvalidImage, clean_image, full_path, remove, store
 from app.records import active_record_for
 from app.schemas import PhotoOut
@@ -22,11 +30,13 @@ def parent_ready(
     house_id: uuid.UUID,
     record_date: date | None,
     observation_id: uuid.UUID | None,
+    user: User,
 ) -> bool:
-    """A photo is accepted only after the record it belongs to has reached the server."""
+    """A photo is accepted only after the record or observation it belongs to."""
     if kind == PhotoKind.TRAY:
         return record_date is not None and active_record_for(db, house_id, record_date) is not None
-    return False  # health observations (UC14) are not on the server yet
+    observation = db.get(HealthObservation, observation_id) if observation_id else None
+    return observation is not None and observation.created_by == user.id
 
 
 @router.put("/{photo_id}")
@@ -60,7 +70,7 @@ async def upload_photo(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Foto kesehatan butuh laporan.")
     if db.get(ChickenHouse, house_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Kandang tidak ditemukan.")
-    if not parent_ready(db, kind, house_id, record_date, observation_id):
+    if not parent_ready(db, kind, house_id, record_date, observation_id, user):
         # The phone sends records before photos; this only happens if the record was
         # rejected or is still waiting. The phone keeps the photo and tries again later.
         raise HTTPException(status.HTTP_409_CONFLICT, "Catatan untuk foto ini belum ada di server.")

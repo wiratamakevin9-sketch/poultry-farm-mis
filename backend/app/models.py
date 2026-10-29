@@ -52,6 +52,19 @@ class TrayCategory(enum.StrEnum):
     DIRTY = "DIRTY"
 
 
+class ObservationStatus(enum.StrEnum):
+    NEW = "NEW"  # not opened by the owner yet ("Baru")
+    SEEN = "SEEN"
+    FORWARDED = "FORWARDED"  # sent to the veterinarian
+    CLOSED = "CLOSED"
+
+
+class ForwardChannel(enum.StrEnum):
+    WHATSAPP = "WHATSAPP"
+    EMAIL = "EMAIL"
+    OTHER = "OTHER"
+
+
 class ConflictResolution(enum.StrEnum):
     KEEP_SERVER = "KEEP_SERVER"
     TAKE_DEVICE = "TAKE_DEVICE"
@@ -221,3 +234,40 @@ class Photo(Base):
     taken_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     uploaded_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class HealthObservation(Base):
+    """UC14: what a worker saw in a house. Never a diagnosis (see CLAUDE.md)."""
+
+    __tablename__ = "health_observations"
+    __table_args__ = (
+        CheckConstraint(
+            "affected_count IS NULL OR affected_count >= 0", name="affected_not_negative"
+        ),
+        Index("ix_health_observations_status", "status"),
+    )
+
+    # Generated on the phone, so sending it twice stores it once.
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    house_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chicken_houses.id"))
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Codes from app.symptoms.SYMPTOMS.
+    symptoms: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    other_symptoms: Mapped[str] = mapped_column(Text, default="")
+    affected_count: Mapped[int | None] = mapped_column(Integer)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[ObservationStatus] = mapped_column(
+        _enum(ObservationStatus, "observation_status"), default=ObservationStatus.NEW
+    )
+    forwarded_via: Mapped[ForwardChannel | None] = mapped_column(
+        _enum(ForwardChannel, "forward_channel")
+    )
+    vet_advice: Mapped[str] = mapped_column(Text, default="")
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    forwarded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

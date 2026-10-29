@@ -5,10 +5,11 @@ errors while typing. The server checks again because it is the source of truth.
 All messages are shown to the worker, so they are in Bahasa Indonesia.
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
-from app.schemas import RecordIn
+from app.schemas import ObservationIn, RecordIn
+from app.symptoms import SYMPTOMS
 
 MAX_FEED_KG_PER_BIRD = Decimal("0.2")
 
@@ -76,5 +77,32 @@ def validate_record(
         # Judged by when the worker saved it, so an edit made offline yesterday is
         # still accepted when the phone only syncs today.
         errors["record_date"] = "Catatan hanya bisa diisi atau diubah untuk hari ini atau kemarin."
+
+    return errors
+
+
+def validate_observation(
+    observation: ObservationIn, live_birds: int | None, now: datetime
+) -> dict[str, str]:
+    """Rules for a health observation (UC14). live_birds is None without an active flock."""
+    errors: dict[str, str] = {}
+
+    if any(code not in SYMPTOMS for code in observation.symptoms):
+        errors["symptoms"] = "Ada gejala yang tidak dikenal."
+    elif not observation.symptoms and not observation.other_symptoms.strip():
+        errors["symptoms"] = "Pilih minimal satu gejala atau tulis gejala lain."
+
+    affected = observation.affected_count
+    if affected is not None and affected < 0:
+        errors["affected_count"] = "Jumlah ayam terkena tidak boleh negatif."
+    elif affected is not None and live_birds is not None and affected > live_birds:
+        errors["affected_count"] = (
+            f"Jumlah ayam terkena ({fmt(affected)}) tidak boleh lebih dari "
+            f"jumlah ayam hidup ({fmt(live_birds)})."
+        )
+
+    # A few minutes of slack for phone clocks that run a little fast.
+    if observation.observed_at > now + timedelta(minutes=5):
+        errors["observed_at"] = "Waktu observasi tidak boleh di masa depan."
 
     return errors

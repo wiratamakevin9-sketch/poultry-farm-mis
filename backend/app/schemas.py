@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,6 +9,8 @@ from app.models import (
     ConflictReason,
     ConflictResolution,
     ConflictStatus,
+    ForwardChannel,
+    ObservationStatus,
     PhotoKind,
     Role,
     TrayCategory,
@@ -220,6 +223,8 @@ class PullResponse(BaseModel):
     has_more: bool
     houses: list[HouseOut]
     conflicts: list[ConflictOut]
+    # The worker's own recent health observations, so the phone can show their status.
+    observations: list["ObservationOut"]
     server_today: date
     eggs_per_tray: int
 
@@ -260,3 +265,60 @@ class PhotoOut(ORMModel):
     height: int
     taken_at: datetime
     uploaded_by: uuid.UUID
+
+
+# ---------- health observations (UC14) ----------
+
+
+class ObservationIn(BaseModel):
+    """A health observation as sent by a phone. Rules live in app.validation."""
+
+    id: uuid.UUID
+    house_id: uuid.UUID
+    observed_at: datetime
+    symptoms: list[str] = Field(default_factory=list, max_length=20)
+    other_symptoms: str = Field(default="", max_length=500)
+    affected_count: int | None = None
+    notes: str = Field(default="", max_length=1000)
+
+
+class ObservationPush(BaseModel):
+    observations: list[dict] = Field(max_length=100)
+
+
+class ObservationOut(ORMModel):
+    id: uuid.UUID
+    house_id: uuid.UUID
+    observed_at: datetime
+    symptoms: list[str]
+    other_symptoms: str
+    affected_count: int | None
+    notes: str
+    status: ObservationStatus
+    forwarded_via: ForwardChannel | None
+    vet_advice: str
+    seen_at: datetime | None
+    forwarded_at: datetime | None
+    closed_at: datetime | None
+    created_by: uuid.UUID
+    created_at: datetime
+
+
+class OwnerObservationOut(ObservationOut):
+    house_name: str
+    created_by_name: str
+    photo_ids: list[uuid.UUID]
+
+
+class ObservationUpdate(BaseModel):
+    vet_advice: str | None = Field(default=None, max_length=2000)
+    # The owner may close an observation or reopen it.
+    status: Literal[ObservationStatus.SEEN, ObservationStatus.CLOSED] | None = None
+
+
+class ForwardRequest(BaseModel):
+    via: ForwardChannel
+
+
+class ObservationSummary(BaseModel):
+    new_count: int

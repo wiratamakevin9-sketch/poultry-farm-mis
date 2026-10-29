@@ -11,6 +11,7 @@ from app.models import (
     ConflictReason,
     ConflictStatus,
     DailyRecord,
+    Role,
     SyncConflict,
     User,
 )
@@ -25,6 +26,7 @@ from app.records import (
     values_of,
 )
 from app.routers.conflicts import open_conflicts
+from app.routers.health import worker_observations
 from app.routers.houses import active_flock, house_out
 from app.schemas import PullResponse, PushRequest, PushResponse, PushResult, RecordIn
 from app.validation import validate_record
@@ -185,6 +187,7 @@ def pull(db: DbSession, user: CurrentUser, since: int = Query(default=0, ge=0)) 
         has_more=has_more,
         houses=[house_out(db, h) for h in houses],
         conflicts=open_conflicts(db, user),
+        observations=worker_observations(db, user) if user.role == Role.WORKER else [],
         server_today=farm_today(),
         eggs_per_tray=settings.eggs_per_tray,
     )
