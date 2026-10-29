@@ -5,6 +5,7 @@ import {
   setMeta,
   type Conflict,
   type FarmDb,
+  type LocalObservation,
   type LocalPhoto,
   type LocalRecord,
   type ServerRecord,
@@ -28,6 +29,19 @@ interface PullResponse {
   conflicts: Conflict[]
   server_today: string
   eggs_per_tray: number
+  observations: ServerObservation[]
+}
+
+interface ServerObservation {
+  id: string
+  house_id: string
+  observed_at: string
+  symptoms: string[]
+  other_symptoms: string
+  affected_count: number | null
+  notes: string
+  status: LocalObservation['status']
+  vet_advice: string
 }
 
 function toPayload(record: LocalRecord) {
@@ -156,13 +170,58 @@ async function applyConflicts(db: FarmDb, conflicts: Conflict[]): Promise<void> 
   }
 }
 
+/** Send health observations made on this phone. They cannot be edited, only sent. */
+export async function pushObservations(db: FarmDb): Promise<void> {
+  const pending = await db.observations.where('sync_status').equals('pending').toArray()
+  if (pending.length === 0) return
+  const { results } = await api<{ results: PushResult[] }>('/sync/observations', {
+    method: 'POST',
+    body: JSON.stringify({
+      observations: pending.map((o) => ({
+        id: o.id,
+        house_id: o.house_id,
+        observed_at: o.observed_at,
+        symptoms: o.symptoms,
+        other_symptoms: o.other_symptoms,
+        affected_count: o.affected_count,
+        notes: o.notes,
+      })),
+    }),
+  })
+  for (const result of results) {
+    await db.observations.update(result.id, {
+      sync_status: result.status === 'accepted' ? 'synced' : 'rejected',
+      errors: result.status === 'rejected' ? result.errors : undefined,
+    })
+  }
+}
+
+async function mergeObservations(db: FarmDb, observations: ServerObservation[]) {
+  for (const server of observations) {
+    await db.observations.put({
+      id: server.id,
+      house_id: server.house_id,
+      observed_at: server.observed_at,
+      symptoms: server.symptoms,
+      other_symptoms: server.other_symptoms,
+      affected_count: server.affected_count,
+      notes: server.notes,
+      sync_status: 'synced',
+      status: server.status,
+      vet_advice: server.vet_advice,
+    })
+  }
+}
+
 /** Get everything that changed on the server since the last pull. */
 export async function pull(db: FarmDb): Promise<void> {
   let cursor = await getMeta(db, 'cursor', 0)
   for (;;) {
     const page = await api<PullResponse>(`/sync/pull?since=${cursor}`)
-    await db.transaction('rw', [db.records, db.outbox, db.houses, db.conflicts, db.meta], async () => {
+    const tables = [db.records, db.outbox, db.houses, db.conflicts, db.meta, db.observations]
+    await db.transaction('rw', tables, async () => {
       await mergeRecords(db, page.records)
+      await mergeObservations(db, page.observations ?? [])
       await db.houses.clear()
       await db.houses.bulkPut(page.houses)
       await applyConflicts(db, page.conflicts)
@@ -185,7 +244,8 @@ async function parentSynced(db: FarmDb, photo: LocalPhoto): Promise<boolean> {
       .first()
     return record?.sync_status === 'synced'
   }
-  return false // health observations (UC14) come later
+  const observation = await db.observations.get(photo.observation_id!)
+  return observation?.sync_status === 'synced'
 }
 
 function photoForm(photo: LocalPhoto): FormData {
@@ -231,6 +291,7 @@ export function syncNow(db: FarmDb): Promise<void> {
   if (!task) {
     task = (async () => {
       await pushOutbox(db)
+      await pushObservations(db)
       await pull(db)
       await uploadPhotos(db) // after pull, so records just accepted count as synced
     })().finally(() => running.delete(db))

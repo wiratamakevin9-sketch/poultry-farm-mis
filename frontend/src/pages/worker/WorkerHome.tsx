@@ -71,6 +71,11 @@ export default function WorkerHome() {
         </button>
       </div>
 
+      <Link className="button secondary" to="/kesehatan"
+        style={{ display: 'flex', marginBottom: 16 }}>
+        Kesehatan ayam: lapor &amp; lihat laporan
+      </Link>
+
       {houses && houses.length === 0 && (
         <div className="alert warning">
           Data kandang belum ada di HP ini. Sambungkan ke internet sekali, lalu tekan

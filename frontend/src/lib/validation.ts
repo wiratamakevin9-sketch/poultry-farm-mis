@@ -114,3 +114,37 @@ export function validateRecord(
     },
   }
 }
+
+export interface ObservationForm {
+  symptoms: string[]
+  other_symptoms: string
+  affected_count: string
+  notes: string
+  photoCount: number
+}
+
+export const MAX_HEALTH_PHOTOS = 3
+
+/** Same rules as the server (validate_observation), plus 1-3 photos (ADR 0002). */
+export function validateObservation(
+  form: ObservationForm,
+  liveBirds: number | null,
+): Partial<Record<'symptoms' | 'affected_count' | 'notes' | 'photos', string>> {
+  const errors: ReturnType<typeof validateObservation> = {}
+  if (form.symptoms.length === 0 && !form.other_symptoms.trim()) {
+    errors.symptoms = 'Pilih minimal satu gejala atau tulis gejala lain.'
+  }
+  const text = form.affected_count.trim()
+  if (text !== '') {
+    if (!/^\d+$/.test(text)) errors.affected_count = 'Isi jumlah ayam dengan angka bulat.'
+    else if (liveBirds !== null && Number(text) > liveBirds) {
+      errors.affected_count =
+        `Jumlah ayam terkena (${formatNumber(Number(text))}) tidak boleh lebih dari ` +
+        `jumlah ayam hidup (${formatNumber(liveBirds)}).`
+    }
+  }
+  if (form.notes.length > 1000) errors.notes = 'Catatan maksimal 1.000 karakter.'
+  if (form.photoCount < 1) errors.photos = 'Ambil minimal 1 foto.'
+  else if (form.photoCount > MAX_HEALTH_PHOTOS) errors.photos = 'Maksimal 3 foto.'
+  return errors
+}

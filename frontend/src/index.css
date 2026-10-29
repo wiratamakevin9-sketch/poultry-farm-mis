@@ -544,3 +544,43 @@ label.button:focus-within {
 .field > label {
   display: block;
 }
+
+/* ---------- health form ---------- */
+
+fieldset.card {
+  margin: 0 0 16px;
+}
+
+legend {
+  font-weight: 700;
+  color: var(--color-foreground);
+  padding: 0 4px;
+}
+
+label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+label.check input {
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+
+a.button {
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+}
+
+a.button.secondary {
+  background: #fff;
+  color: var(--color-primary);
+}

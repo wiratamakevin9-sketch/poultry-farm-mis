@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { House } from '../api/types'
+import type { ObservationStatus } from '../lib/symptoms'
 
 export type SyncStatus = 'pending' | 'synced' | 'conflict' | 'rejected'
 
@@ -88,6 +89,22 @@ export interface LocalPhoto {
   error?: string
 }
 
+/** UC14: a health observation made on this phone (or pulled back to show its status). */
+export interface LocalObservation {
+  id: string // UUID made on the phone
+  house_id: string
+  observed_at: string
+  symptoms: string[]
+  other_symptoms: string
+  affected_count: number | null
+  notes: string
+  sync_status: 'pending' | 'synced' | 'rejected'
+  errors?: Record<string, string>
+  // From the server once the owner has acted on it.
+  status?: ObservationStatus
+  vet_advice?: string
+}
+
 interface Meta {
   key: string
   value: unknown
@@ -100,6 +117,7 @@ export type FarmDb = Dexie & {
   conflicts: EntityTable<Conflict, 'id'>
   meta: EntityTable<Meta, 'key'>
   photos: EntityTable<LocalPhoto, 'id'>
+  observations: EntityTable<LocalObservation, 'id'>
 }
 
 function createDb(name: string): FarmDb {
@@ -114,6 +132,10 @@ function createDb(name: string): FarmDb {
   // Version 2: photos (UC13 egg trays, UC14 health observations).
   db.version(2).stores({
     photos: 'id, status, [house_id+record_date], observation_id',
+  })
+  // Version 3: health observations (UC14).
+  db.version(3).stores({
+    observations: 'id, sync_status, observed_at',
   })
   return db
 }

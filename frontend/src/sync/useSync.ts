@@ -27,7 +27,14 @@ export function useSync(db: FarmDb, run: (db: FarmDb) => Promise<void> = syncNow
   const [online, setOnline] = useState(() => navigator.onLine)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const pending = useLiveQuery(() => countPending(db), [db], 0)
+  // Daily records and health observations waiting to be sent.
+  const pending = useLiveQuery(
+    async () =>
+      (await countPending(db)) +
+      (await db.observations.where('sync_status').equals('pending').count()),
+    [db],
+    0,
+  )
   const pendingPhotos = useLiveQuery(() => countPendingPhotos(db), [db], 0)
   const conflicts = useLiveQuery(() => db.conflicts.count(), [db], 0)
   const lastSyncAt = useLiveQuery(() => getMeta<string | null>(db, 'last_sync_at', null), [db], null)
