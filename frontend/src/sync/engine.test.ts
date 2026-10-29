@@ -14,6 +14,7 @@ const VALUES: RecordValues = {
   eggs_good: 4200,
   eggs_cracked: 30,
   eggs_rejected: 10,
+  eggs_dirty: 0,
   feed_kg: 560,
   water_liters: null,
   dead: 2,
@@ -98,6 +99,16 @@ describe('outbox', () => {
     const saved = await db.records.get(record.id)
     expect(saved?.sync_status).toBe('synced')
     expect(saved?.base_version).toBe(1)
+  })
+
+  it('sends 0 dirty eggs for records saved before the field existed', async () => {
+    const record = await save()
+    await db.records.update(record.id, { eggs_dirty: undefined as unknown as number })
+    apiMock.mockResolvedValueOnce({
+      results: [{ id: record.id, status: 'accepted', version: 1, conflict_id: null, errors: {} }],
+    })
+    await pushOutbox(db)
+    expect(pushBody(0)[0].eggs_dirty).toBe(0)
   })
 
   it('keeps the queue when the network fails', async () => {

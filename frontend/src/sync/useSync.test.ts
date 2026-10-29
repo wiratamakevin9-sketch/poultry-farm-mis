@@ -49,7 +49,7 @@ describe('useSync', () => {
         flock_id: 'f1',
         record_date: '2026-10-26',
         values: {
-          eggs_good: 1, eggs_cracked: 0, eggs_rejected: 0, feed_kg: 1,
+          eggs_good: 1, eggs_cracked: 0, eggs_rejected: 0, eggs_dirty: 0, feed_kg: 1,
           water_liters: null, dead: 0, culled: 0, notes: '',
         },
         user_id: 'u1',

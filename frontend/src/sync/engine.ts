@@ -36,6 +36,7 @@ function toPayload(record: LocalRecord) {
     eggs_good: record.eggs_good,
     eggs_cracked: record.eggs_cracked,
     eggs_rejected: record.eggs_rejected,
+    eggs_dirty: record.eggs_dirty ?? 0, // records saved before this field existed
     feed_kg: record.feed_kg,
     water_liters: record.water_liters,
     dead: record.dead,
@@ -113,6 +114,7 @@ async function mergeRecords(db: FarmDb, serverRecords: ServerRecord[]): Promise<
       eggs_good: server.eggs_good,
       eggs_cracked: server.eggs_cracked,
       eggs_rejected: server.eggs_rejected,
+      eggs_dirty: server.eggs_dirty ?? 0,
       feed_kg: Number(server.feed_kg),
       water_liters: server.water_liters === null ? null : Number(server.water_liters),
       dead: server.dead,

@@ -14,6 +14,7 @@ const EMPTY: Form = {
   eggs_good: '',
   eggs_cracked: '',
   eggs_rejected: '',
+  eggs_dirty: '',
   feed_kg: '',
   water_liters: '',
   dead: '',
@@ -27,6 +28,7 @@ function toForm(record: LocalRecord): Form {
     eggs_good: String(record.eggs_good),
     eggs_cracked: String(record.eggs_cracked),
     eggs_rejected: String(record.eggs_rejected),
+    eggs_dirty: String(record.eggs_dirty ?? 0),
     feed_kg: decimal(record.feed_kg),
     water_liters: record.water_liters === null ? '' : decimal(record.water_liters),
     dead: String(record.dead),
@@ -86,7 +88,11 @@ export default function RecordForm() {
   const today = farmDate()
   const { errors, values } = validateRecord(form, liveBirds, date, today)
   const show = (field: keyof Form) => (submitted || touched[field] ? errors[field] : undefined)
-  const totalEggs = count(form.eggs_good) + count(form.eggs_cracked) + count(form.eggs_rejected)
+  const totalEggs =
+    count(form.eggs_good) +
+    count(form.eggs_cracked) +
+    count(form.eggs_rejected) +
+    count(form.eggs_dirty)
   const feed = parseDecimal(form.feed_kg) ?? 0
   const inConflict = existing?.sync_status === 'conflict'
 
@@ -156,6 +162,9 @@ export default function RecordForm() {
           <NumberField id="eggs_cracked" label="Telur retak" value={form.eggs_cracked}
             onChange={update('eggs_cracked')} onBlur={blur('eggs_cracked')}
             error={show('eggs_cracked')} />
+          <NumberField id="eggs_dirty" label="Telur kotor" value={form.eggs_dirty}
+            onChange={update('eggs_dirty')} onBlur={blur('eggs_dirty')}
+            error={show('eggs_dirty')} />
           <NumberField id="eggs_rejected" label="Telur afkir" value={form.eggs_rejected}
             onChange={update('eggs_rejected')} onBlur={blur('eggs_rejected')}
             error={show('eggs_rejected')} />

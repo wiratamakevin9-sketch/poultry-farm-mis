@@ -122,6 +122,7 @@ class RecordIn(BaseModel):
     eggs_good: int
     eggs_cracked: int
     eggs_rejected: int
+    eggs_dirty: int = 0  # older app versions do not send it
     feed_kg: Decimal
     water_liters: Decimal | None = None
     dead: int
@@ -141,6 +142,7 @@ class RecordOut(ORMModel):
     eggs_good: int
     eggs_cracked: int
     eggs_rejected: int
+    eggs_dirty: int
     feed_kg: Decimal
     water_liters: Decimal | None
     dead: int
@@ -217,6 +219,7 @@ class RecordValues(BaseModel):
     eggs_good: int
     eggs_cracked: int
     eggs_rejected: int
+    eggs_dirty: int = 0  # older app versions do not send it
     feed_kg: Decimal
     water_liters: Decimal | None = None
     dead: int

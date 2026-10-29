@@ -43,6 +43,7 @@ test('records entered offline reach the server exactly once', async ({ page, con
     'Telur bagus': '4000',
     'Telur retak': '20',
     'Telur afkir': '8',
+    'Telur kotor': '12',
     Pakan: '550,5',
     'Ayam mati': '2',
     'Ayam afkir': '1',

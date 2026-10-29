@@ -49,6 +49,7 @@ const VALID = {
   'Telur bagus': '4000',
   'Telur retak': '10',
   'Telur afkir': '5',
+  'Telur kotor': '0',
   Pakan: '550',
   'Ayam mati': '2',
   'Ayam afkir': '0',
@@ -102,7 +103,7 @@ describe('RecordForm', () => {
     const date = farmDate()
     await db.records.put({
       id: 'r1', house_id: 'h1', flock_id: 'f1', record_date: date, eggs_good: 3800,
-      eggs_cracked: 1, eggs_rejected: 1, feed_kg: 500, water_liters: null, dead: 0,
+      eggs_cracked: 1, eggs_rejected: 1, eggs_dirty: 0, feed_kg: 500, water_liters: null, dead: 0,
       culled: 0, notes: '', base_version: 1, updated_at: new Date().toISOString(),
       sync_status: 'synced',
     })

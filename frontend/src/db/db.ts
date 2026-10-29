@@ -8,6 +8,7 @@ export interface RecordValues {
   eggs_good: number
   eggs_cracked: number
   eggs_rejected: number
+  eggs_dirty: number
   feed_kg: number
   water_liters: number | null
   dead: number

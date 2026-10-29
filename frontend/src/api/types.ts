@@ -34,6 +34,7 @@ export interface OwnerRecord {
   eggs_good: number
   eggs_cracked: number
   eggs_rejected: number
+  eggs_dirty: number
   feed_kg: string // decimal as text
   water_liters: string | null
   dead: number

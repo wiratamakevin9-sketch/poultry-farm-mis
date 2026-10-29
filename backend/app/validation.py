@@ -16,6 +16,7 @@ COUNT_LABELS = {
     "eggs_good": "Telur bagus",
     "eggs_cracked": "Telur retak",
     "eggs_rejected": "Telur afkir",
+    "eggs_dirty": "Telur kotor",
     "dead": "Ayam mati",
     "culled": "Ayam afkir",
 }
@@ -47,7 +48,7 @@ def validate_record(
         if getattr(record, field) < 0:
             errors[field] = f"{label} tidak boleh negatif."
 
-    total_eggs = record.eggs_good + record.eggs_cracked + record.eggs_rejected
+    total_eggs = record.eggs_good + record.eggs_cracked + record.eggs_rejected + record.eggs_dirty
     if "eggs_good" not in errors and total_eggs > live_birds:
         errors["eggs_good"] = (
             f"Total telur ({fmt(total_eggs)}) tidak boleh lebih dari "

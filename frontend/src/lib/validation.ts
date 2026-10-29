@@ -7,6 +7,7 @@ export interface RecordForm {
   eggs_good: string
   eggs_cracked: string
   eggs_rejected: string
+  eggs_dirty: string
   feed_kg: string
   water_liters: string
   dead: string
@@ -22,6 +23,7 @@ const COUNT_LABELS = {
   eggs_good: 'Telur bagus',
   eggs_cracked: 'Telur retak',
   eggs_rejected: 'Telur afkir',
+  eggs_dirty: 'Telur kotor',
   dead: 'Ayam mati',
   culled: 'Ayam afkir',
 } as const
@@ -61,9 +63,9 @@ export function validateRecord(
     else counts[field] = value
   }
 
-  const eggFields: CountField[] = ['eggs_good', 'eggs_cracked', 'eggs_rejected']
+  const eggFields: CountField[] = ['eggs_good', 'eggs_cracked', 'eggs_rejected', 'eggs_dirty']
   if (eggFields.every((f) => f in counts)) {
-    const total = counts.eggs_good + counts.eggs_cracked + counts.eggs_rejected
+    const total = eggFields.reduce((sum, f) => sum + counts[f], 0)
     if (total > liveBirds) {
       errors.eggs_good =
         `Total telur (${formatNumber(total)}) tidak boleh lebih dari ` +

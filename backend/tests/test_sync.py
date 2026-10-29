@@ -292,3 +292,28 @@ def test_new_record_older_than_yesterday_rejected(client: TestClient, worker_hea
     assert result["errors"]["record_date"] == (
         "Catatan hanya bisa diisi atau diubah untuk hari ini atau kemarin."
     )
+
+
+def test_dirty_eggs_are_stored_and_counted_in_hdp(
+    client: TestClient, worker_headers: dict, owner_headers: dict, db: Session
+) -> None:
+    house = house_id(client, worker_headers)
+    record = new_record(
+        house, eggs_good=3900, eggs_cracked=40, eggs_rejected=10, eggs_dirty=50, feed_kg=550
+    )
+    [result] = push(client, worker_headers, record)
+    assert result["status"] == "accepted"
+    assert db.get(DailyRecord, uuid.UUID(record["id"])).eggs_dirty == 50
+    [row] = client.get("/api/records", headers=owner_headers).json()
+    assert row["eggs_dirty"] == 50
+    assert row["hdp"] == 80.0  # (3900 + 40 + 10 + 50) / 5000
+
+
+def test_older_app_without_dirty_eggs_still_syncs(
+    client: TestClient, worker_headers: dict, db: Session
+) -> None:
+    record = new_record(house_id(client, worker_headers))
+    record.pop("eggs_dirty", None)
+    [result] = push(client, worker_headers, record)
+    assert result["status"] == "accepted"
+    assert db.get(DailyRecord, uuid.UUID(record["id"])).eggs_dirty == 0

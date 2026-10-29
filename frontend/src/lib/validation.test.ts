@@ -8,6 +8,7 @@ const FORM: RecordForm = {
   eggs_good: '4000',
   eggs_cracked: '20',
   eggs_rejected: '10',
+  eggs_dirty: '0',
   feed_kg: '550',
   water_liters: '',
   dead: '2',
@@ -65,6 +66,18 @@ describe('validateRecord', () => {
     expect(check({}, 5000, '2026-10-27').errors.record_date).toBe('Tanggal tidak boleh di masa depan.')
     expect(check({}, 5000, '2026-10-25').errors).toEqual({})
     expect(check({}, 5000, '2026-10-24').errors.record_date).toBeDefined()
+  })
+})
+
+describe('dirty eggs', () => {
+  it('is required, not negative, and counts towards the total', () => {
+    expect(check({ eggs_dirty: '' }).errors.eggs_dirty).toBe(
+      'Telur kotor wajib diisi (isi 0 jika tidak ada).',
+    )
+    expect(check({ eggs_dirty: '971' }).errors.eggs_good).toBe(
+      'Total telur (5.001) tidak boleh lebih dari jumlah ayam hidup (5.000).',
+    )
+    expect(check({ eggs_dirty: '970' }).values?.eggs_dirty).toBe(970)
   })
 })
 

@@ -14,6 +14,7 @@ VALUE_FIELDS = (
     "eggs_good",
     "eggs_cracked",
     "eggs_rejected",
+    "eggs_dirty",
     "feed_kg",
     "water_liters",
     "dead",

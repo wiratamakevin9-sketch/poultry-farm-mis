@@ -5,7 +5,7 @@ import type { Conflict } from '../db/db'
 import ConflictCard from './ConflictCard'
 
 const VALUES = {
-  eggs_good: 4000, eggs_cracked: 5, eggs_rejected: 2, feed_kg: 540,
+  eggs_good: 4000, eggs_cracked: 5, eggs_rejected: 2, eggs_dirty: 0, feed_kg: 540,
   water_liters: null, dead: 1, culled: 0, notes: '',
 }
 

@@ -108,7 +108,7 @@ export default function RecordsPage() {
                     <td>{formatDate(r.record_date)}</td>
                     <td>{r.house_name}</td>
                     <td className="num">
-                      {formatNumber(r.eggs_good + r.eggs_cracked + r.eggs_rejected)}
+                      {formatNumber(r.eggs_good + r.eggs_cracked + r.eggs_rejected + r.eggs_dirty)}
                     </td>
                     <td className="num">{formatNumber(r.hdp, 1)}%</td>
                     <td className="num">{formatNumber(r.feed_per_bird_g, 1)} g</td>

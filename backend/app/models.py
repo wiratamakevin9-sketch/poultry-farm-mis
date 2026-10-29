@@ -112,7 +112,7 @@ class DailyRecord(Base):
     __tablename__ = "daily_records"
     __table_args__ = (
         CheckConstraint(
-            "eggs_good >= 0 AND eggs_cracked >= 0 AND eggs_rejected >= 0"
+            "eggs_good >= 0 AND eggs_cracked >= 0 AND eggs_rejected >= 0 AND eggs_dirty >= 0"
             " AND dead >= 0 AND culled >= 0",
             name="counts_not_negative",
         ),
@@ -136,6 +136,7 @@ class DailyRecord(Base):
     eggs_good: Mapped[int] = mapped_column(Integer)
     eggs_cracked: Mapped[int] = mapped_column(Integer)
     eggs_rejected: Mapped[int] = mapped_column(Integer)
+    eggs_dirty: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     feed_kg: Mapped[Decimal] = mapped_column(Numeric(8, 2))
     water_liters: Mapped[Decimal | None] = mapped_column(Numeric(8, 1))
     dead: Mapped[int] = mapped_column(Integer)

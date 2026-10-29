@@ -55,7 +55,7 @@ def list_records(
     out = []
     for record in records:
         alive = birds[record.id]
-        eggs = record.eggs_good + record.eggs_cracked + record.eggs_rejected
+        eggs = record.eggs_good + record.eggs_cracked + record.eggs_rejected + record.eggs_dirty
         out.append(
             OwnerRecordOut(
                 **record_out(record).model_dump(),

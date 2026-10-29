@@ -102,3 +102,16 @@ def test_farm_date_uses_wita() -> None:
     # 16:30 UTC is already 00:30 the next day in Bali (UTC+8).
     assert farm_date(datetime(2026, 10, 25, 16, 30, tzinfo=UTC)) == date(2026, 10, 26)
     assert farm_date(datetime(2026, 10, 25, 15, 59, tzinfo=UTC)) == date(2026, 10, 25)
+
+
+def test_dirty_eggs_cannot_be_negative() -> None:
+    assert check(make(eggs_dirty=-1))["eggs_dirty"] == "Telur kotor tidak boleh negatif."
+
+
+def test_dirty_eggs_count_towards_total() -> None:
+    # 4000 + 20 + 10 + 971 = 5001 > 5000 live birds
+    errors = check(make(eggs_dirty=971))
+    assert errors["eggs_good"] == (
+        "Total telur (5.001) tidak boleh lebih dari jumlah ayam hidup (5.000)."
+    )
+    assert check(make(eggs_dirty=970)) == {}
