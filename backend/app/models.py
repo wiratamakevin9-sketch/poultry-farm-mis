@@ -41,6 +41,17 @@ class ConflictStatus(enum.StrEnum):
     RESOLVED = "RESOLVED"
 
 
+class PhotoKind(enum.StrEnum):
+    TRAY = "TRAY"  # UC13 egg tray photo
+    HEALTH = "HEALTH"  # UC14 health observation photo
+
+
+class TrayCategory(enum.StrEnum):
+    GOOD_REMAINDER = "GOOD_REMAINDER"  # the last, partly filled tray of good eggs
+    CRACKED = "CRACKED"
+    DIRTY = "DIRTY"
+
+
 class ConflictResolution(enum.StrEnum):
     KEEP_SERVER = "KEEP_SERVER"
     TAKE_DEVICE = "TAKE_DEVICE"
@@ -176,4 +187,37 @@ class SyncConflict(Base):
     )
     resolved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Photo(Base):
+    """A photo taken on a phone (ADR 0002). The file lives in settings.photo_dir."""
+
+    __tablename__ = "photos"
+    __table_args__ = (
+        CheckConstraint(
+            "(kind = 'TRAY' AND record_date IS NOT NULL AND tray_category IS NOT NULL)"
+            " OR (kind = 'HEALTH' AND observation_id IS NOT NULL)",
+            name="photo_parent",
+        ),
+        Index("ix_photos_house_date", "house_id", "record_date"),
+    )
+
+    # Generated on the phone, so uploading the same photo twice stores it once.
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    kind: Mapped[PhotoKind] = mapped_column(_enum(PhotoKind, "photo_kind"))
+    house_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chicken_houses.id"))
+    # TRAY photos belong to the daily record of this house and day.
+    record_date: Mapped[date | None] = mapped_column(Date)
+    tray_category: Mapped[TrayCategory | None] = mapped_column(_enum(TrayCategory, "tray_category"))
+    # Eggs on the tray as counted by the worker: the training label for Iteration 3.
+    label_count: Mapped[int | None] = mapped_column(Integer)
+    # HEALTH photos belong to a health observation.
+    observation_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
+    file_path: Mapped[str] = mapped_column(String(255))  # relative to settings.photo_dir
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    taken_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    uploaded_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

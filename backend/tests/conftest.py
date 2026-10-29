@@ -19,7 +19,7 @@ from app.db import SessionLocal, engine
 from app.main import app
 from app.seed import seed
 
-TABLES = "sync_conflicts, daily_records, flocks, chicken_houses, users"
+TABLES = "photos, sync_conflicts, daily_records, flocks, chicken_houses, users"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -52,6 +52,16 @@ def clean_database(migrated_database: None) -> Iterator[None]:
     with SessionLocal() as session:
         seed(session)
     yield
+
+
+@pytest.fixture(autouse=True)
+def photo_dir(tmp_path, monkeypatch) -> str:
+    """Each test stores photos in its own temporary folder."""
+    from app.config import settings
+
+    folder = str(tmp_path / "photos")
+    monkeypatch.setattr(settings, "photo_dir", folder)
+    return folder
 
 
 @pytest.fixture

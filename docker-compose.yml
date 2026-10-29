@@ -21,6 +21,9 @@ services:
       DATABASE_URL: postgresql+psycopg://poultry:poultry@db:5432/poultry
       JWT_SECRET: dev-only-secret-change-me-in-production-0001
       SEED_DEV_DATA: "1"
+      PHOTO_DIR: /data/photos
+    volumes:
+      - photo-data:/data/photos
     ports:
       - "8000:8000"
     depends_on:
@@ -38,3 +41,4 @@ services:
 
 volumes:
   db-data:
+  photo-data:

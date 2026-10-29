@@ -4,7 +4,14 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import ConflictReason, ConflictResolution, ConflictStatus, Role
+from app.models import (
+    ConflictReason,
+    ConflictResolution,
+    ConflictStatus,
+    PhotoKind,
+    Role,
+    TrayCategory,
+)
 
 
 class ORMModel(BaseModel):
@@ -233,3 +240,21 @@ class ResolveRequest(BaseModel):
     server_version: int
     # Required for MERGED.
     values: RecordValues | None = None
+
+
+# ---------- photos ----------
+
+
+class PhotoOut(ORMModel):
+    id: uuid.UUID
+    kind: PhotoKind
+    house_id: uuid.UUID
+    record_date: date | None
+    tray_category: TrayCategory | None
+    label_count: int | None
+    observation_id: uuid.UUID | None
+    size_bytes: int
+    width: int
+    height: int
+    taken_at: datetime
+    uploaded_by: uuid.UUID

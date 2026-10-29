@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, conflicts, flocks, houses, records, sync, users
+from app.routers import auth, conflicts, flocks, houses, photos, records, sync, users
 
 app = FastAPI(title="Poultry Farm MIS API")
 
@@ -21,6 +21,7 @@ app.include_router(flocks.router)
 app.include_router(records.router)
 app.include_router(sync.router)
 app.include_router(conflicts.router)
+app.include_router(photos.router)
 
 
 @app.get("/api/health")

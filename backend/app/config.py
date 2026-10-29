@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     farm_timezone: str = "Asia/Makassar"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:4173"]
+    # Where uploaded photos are stored (a Docker volume in docker-compose.yml).
+    photo_dir: str = "data/photos"
+    max_photo_bytes: int = 3 * 1024 * 1024
+    # Photos are re-encoded to at most this many pixels on the long side.
+    max_photo_side: int = 1600
 
 
 settings = Settings()
