@@ -10,8 +10,19 @@ server automatically when a connection returns, with no lost or duplicated recor
 The owner manages users, houses and flocks, sees the synced records and handles
 sync conflicts the workers did not resolve in time.
 
-See [`docs/iteration-1-report.md`](docs/iteration-1-report.md) for what was built,
-the test results and the known limitations.
+Iteration 2, part 1 adds two use cases (ADR 0002):
+
+- **UC13 Egg tray photos:** the worker counts good eggs as full trays × 30 + remainder
+  and photographs the remainder tray and the sorted cracked and dirty trays. Photos are
+  taken offline and stored with the counts (training data for automatic counting in
+  Iteration 3). Dirty eggs have their own count.
+- **UC14 Health observations:** the worker reports symptoms, estimated affected birds,
+  notes and 1–3 photos, offline. The owner sees a "Baru" badge, opens the report,
+  shares it with the veterinarian as a PDF (WhatsApp or email), records the vet's
+  advice and closes it; the worker sees the status and the advice.
+
+Reports: [`docs/iteration-1-report.md`](docs/iteration-1-report.md) and
+[`docs/iteration-2-part-1-report.md`](docs/iteration-2-part-1-report.md).
 
 ## Tech stack
 
@@ -44,7 +55,8 @@ The `frontend` container serves a **production build** so the service worker and
 offline mode behave as they would on a phone. After changing frontend code, rebuild
 with `docker compose up --build frontend`, or use the local setup below for hot reload.
 
-Stop with `docker compose down` (add `-v` to also delete the database volume).
+Photos are stored in the `photo-data` volume. Stop with `docker compose down` (add `-v`
+to also delete the database and photo volumes).
 
 ### Test accounts
 
@@ -84,7 +96,8 @@ mode with Docker Compose or the preview build, not with `npm run dev`.
 Backend settings come from environment variables (or `backend/.env`):
 `DATABASE_URL`, `JWT_SECRET` (set a long random value outside development),
 `ACCESS_TOKEN_MINUTES` (default 30), `REFRESH_TOKEN_DAYS` (default 30),
-`FARM_TIMEZONE` (default `Asia/Makassar`).
+`FARM_TIMEZONE` (default `Asia/Makassar`), `PHOTO_DIR` (default `data/photos`),
+`MAX_PHOTO_BYTES` (default 3 MB), `EGGS_PER_TRAY` (default 30).
 
 ## Run the tests
 
@@ -132,6 +145,23 @@ production build on port 4174. If Playwright has no browser yet, run
 To see a **sync conflict**: log in as `pekerja2` in a second browser profile, go offline,
 enter a record for a house and day that `pekerja1` already saved, then go online.
 `pekerja2` gets **Data bentrok** with a side-by-side comparison and three choices.
+
+### Egg tray photos (UC13)
+
+On a computer the photo buttons open a file picker instead of the camera; any JPEG
+works. Log in as `pekerja1`, open a house, fill **Tray penuh** and **Sisa butir** (good
+eggs are filled in for you), add photos under **Foto tray**, and save. The status bar
+shows the photos waiting; they upload after the record has synced. As `pemilik`, the
+**Foto** column in **Catatan** opens them with their counts.
+
+### Health observations (UC14)
+
+As `pekerja2`, tap **Kesehatan ayam → Laporkan kesehatan ayam**, choose a house, tick
+symptoms, add 1–3 photos and save (works offline). As `pemilik`, the **Kesehatan** menu
+shows **Baru 1**. Open the report and press **Bagikan PDF**: on an Android phone this
+opens the share sheet (WhatsApp, Gmail); on a computer it downloads the PDF, and the
+WhatsApp Web / email links help you send it. Then mark how it was sent, write the
+vet's advice and press **Tandai selesai**. The worker's list shows the status and advice.
 
 To install the app, open the Chrome menu → **Install app** (desktop) or **Add to Home
 screen** (Android). Installing on a real phone needs the app to be served over HTTPS,
