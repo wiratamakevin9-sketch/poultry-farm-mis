@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, NetworkError } from '../api/client'
 import { getMeta, type FarmDb } from '../db/db'
+import { countPendingPhotos } from '../db/photos'
 import { countPending } from '../db/records'
 import { syncNow } from './engine'
 
@@ -11,6 +12,7 @@ export interface SyncState {
   online: boolean
   syncing: boolean
   pending: number
+  pendingPhotos: number
   conflicts: number
   lastSyncAt: string | null
   error: string | null
@@ -26,6 +28,7 @@ export function useSync(db: FarmDb, run: (db: FarmDb) => Promise<void> = syncNow
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const pending = useLiveQuery(() => countPending(db), [db], 0)
+  const pendingPhotos = useLiveQuery(() => countPendingPhotos(db), [db], 0)
   const conflicts = useLiveQuery(() => db.conflicts.count(), [db], 0)
   const lastSyncAt = useLiveQuery(() => getMeta<string | null>(db, 'last_sync_at', null), [db], null)
 
@@ -71,5 +74,5 @@ export function useSync(db: FarmDb, run: (db: FarmDb) => Promise<void> = syncNow
     }
   }, [sync])
 
-  return { online, syncing, pending, conflicts, lastSyncAt, error, sync }
+  return { online, syncing, pending, pendingPhotos, conflicts, lastSyncAt, error, sync }
 }

@@ -66,6 +66,28 @@ export interface Conflict {
   can_resolve: boolean
 }
 
+export type PhotoKind = 'TRAY' | 'HEALTH'
+export type TrayCategory = 'GOOD_REMAINDER' | 'CRACKED' | 'DIRTY'
+export type PhotoStatus = 'pending' | 'uploaded' | 'failed'
+
+/** A photo taken on this phone. The full image is dropped after upload; the thumbnail stays. */
+export interface LocalPhoto {
+  id: string // UUID made on the phone
+  kind: PhotoKind
+  house_id: string
+  record_date?: string // TRAY: the daily record's day
+  tray_category?: TrayCategory
+  label_count?: number | null // eggs on the tray as counted by the worker
+  observation_id?: string // HEALTH: the observation it belongs to
+  blob?: Blob
+  thumb: Blob
+  width: number
+  height: number
+  taken_at: string
+  status: PhotoStatus
+  error?: string
+}
+
 interface Meta {
   key: string
   value: unknown
@@ -77,6 +99,7 @@ export type FarmDb = Dexie & {
   houses: EntityTable<House, 'id'>
   conflicts: EntityTable<Conflict, 'id'>
   meta: EntityTable<Meta, 'key'>
+  photos: EntityTable<LocalPhoto, 'id'>
 }
 
 function createDb(name: string): FarmDb {
@@ -87,6 +110,10 @@ function createDb(name: string): FarmDb {
     houses: 'id',
     conflicts: 'id, device_record_id',
     meta: 'key',
+  })
+  // Version 2: photos (UC13 egg trays, UC14 health observations).
+  db.version(2).stores({
+    photos: 'id, status, [house_id+record_date], observation_id',
   })
   return db
 }

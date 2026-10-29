@@ -461,3 +461,57 @@ th.num {
   min-height: 44px;
   font-weight: 600;
 }
+
+/* ---------- photos ---------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+label.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-primary);
+  background: #fff;
+}
+
+label.button.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+label.button:focus-within {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.photo-thumb {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0;
+}
+
+.photo-thumb img {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.photo-thumb figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 0.9rem;
+}

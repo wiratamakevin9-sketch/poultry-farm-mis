@@ -20,6 +20,7 @@ export default function SyncStatus() {
         <strong>{sync.online ? 'Online' : 'Offline'}</strong>
         <span>
           {sync.pending > 0 ? `${sync.pending} data menunggu dikirim` : 'Semua data terkirim'}
+          {sync.pendingPhotos > 0 && ` · ${sync.pendingPhotos} foto menunggu`}
         </span>
         <span className="sync-status__time">Sinkron: {timeAgo(sync.lastSyncAt)}</span>
       </div>

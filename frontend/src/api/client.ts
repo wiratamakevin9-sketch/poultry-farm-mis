@@ -27,7 +27,8 @@ export function toSession(body: TokenResponse): Session {
 
 async function send(path: string, init: RequestInit, token?: string): Promise<Response> {
   const headers = new Headers(init.headers)
-  if (init.body) headers.set('Content-Type', 'application/json')
+  // FormData (photo upload) sets its own multipart Content-Type.
+  if (typeof init.body === 'string') headers.set('Content-Type', 'application/json')
   if (token) headers.set('Authorization', `Bearer ${token}`)
   try {
     return await fetch(`/api${path}`, { ...init, headers })

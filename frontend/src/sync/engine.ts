@@ -1,10 +1,11 @@
-import { api } from '../api/client'
+import { ApiError, api } from '../api/client'
 import type { House } from '../api/types'
 import {
   getMeta,
   setMeta,
   type Conflict,
   type FarmDb,
+  type LocalPhoto,
   type LocalRecord,
   type ServerRecord,
 } from '../db/db'
@@ -173,6 +174,53 @@ export async function pull(db: FarmDb): Promise<void> {
   await setMeta(db, 'last_sync_at', new Date().toISOString())
 }
 
+/** Is the record or observation this photo belongs to already on the server? */
+async function parentSynced(db: FarmDb, photo: LocalPhoto): Promise<boolean> {
+  if (photo.kind === 'TRAY') {
+    const record = await db.records
+      .where('[house_id+record_date]')
+      .equals([photo.house_id, photo.record_date!])
+      .first()
+    return record?.sync_status === 'synced'
+  }
+  return false // health observations (UC14) come later
+}
+
+function photoForm(photo: LocalPhoto): FormData {
+  const form = new FormData()
+  form.set('kind', photo.kind)
+  form.set('house_id', photo.house_id)
+  form.set('taken_at', photo.taken_at)
+  if (photo.record_date) form.set('record_date', photo.record_date)
+  if (photo.tray_category) form.set('tray_category', photo.tray_category)
+  if (photo.label_count != null) form.set('label_count', String(photo.label_count))
+  if (photo.observation_id) form.set('observation_id', photo.observation_id)
+  form.set('file', photo.blob!, `${photo.id}.jpg`)
+  return form
+}
+
+/**
+ * Upload waiting photos one by one, after their record is on the server, so a photo
+ * never blocks or delays the daily records. A network error stops the round; the
+ * photos stay queued.
+ */
+export async function uploadPhotos(db: FarmDb): Promise<void> {
+  const waiting = await db.photos.where('status').equals('pending').sortBy('taken_at')
+  for (const photo of waiting) {
+    if (!photo.blob || !(await parentSynced(db, photo))) continue
+    try {
+      await api(`/photos/${photo.id}`, { method: 'PUT', body: photoForm(photo) })
+      // The server has it: drop the full image to save space, keep the thumbnail.
+      await db.photos.update(photo.id, { status: 'uploaded', blob: undefined, error: undefined })
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err
+      if (err.status === 409 || err.status === 401) continue // record not there yet / login
+      // Invalid or too large: retrying will not help; the worker sees the message.
+      await db.photos.update(photo.id, { status: 'failed', error: err.message })
+    }
+  }
+}
+
 const running = new WeakMap<FarmDb, Promise<void>>()
 
 /** Push then pull. Calls made while a sync is running share it. */
@@ -182,6 +230,7 @@ export function syncNow(db: FarmDb): Promise<void> {
     task = (async () => {
       await pushOutbox(db)
       await pull(db)
+      await uploadPhotos(db) // after pull, so records just accepted count as synced
     })().finally(() => running.delete(db))
     running.set(db, task)
   }
