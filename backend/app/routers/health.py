@@ -4,13 +4,14 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, Response, status
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.birds import live_birds
 from app.deps import DbSession, OwnerUser, WorkerUser
+from app.health_pdf import build_pdf, pdf_filename
 from app.models import (
     ChickenHouse,
     HealthObservation,
@@ -197,3 +198,14 @@ def mark_forwarded(
         observation.status = ObservationStatus.FORWARDED
     db.commit()
     return owner_out(db, observation)
+
+
+@router.get("/api/health-observations/{observation_id}/pdf")
+def observation_pdf(observation_id: uuid.UUID, db: DbSession, _: OwnerUser) -> Response:
+    """The report the owner sends to the veterinarian (WhatsApp or email)."""
+    observation = _get(db, observation_id)
+    return Response(
+        build_pdf(db, observation),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{pdf_filename(db, observation)}"'},
+    )

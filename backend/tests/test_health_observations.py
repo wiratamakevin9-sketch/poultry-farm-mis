@@ -1,7 +1,9 @@
+import io
 import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -162,3 +164,51 @@ def test_health_photo_needs_own_observation(
     assert ok.status_code == 201
     detail = client.get(f"/api/health-observations/{item['id']}", headers=owner_headers).json()
     assert detail["photo_ids"] == [ok.json()["id"]]
+
+
+def test_pdf_for_the_veterinarian(
+    client: TestClient, worker_headers: dict, owner_headers: dict
+) -> None:
+    house = house_id(client, worker_headers)
+    item = observation(
+        house,
+        other_symptoms="Bulu kusam – sejak 2 hari 😟",  # non-Latin-1 text must not break the PDF
+        notes="Beberapa ayam di sudut utara terlihat lemas.",
+    )
+    push(client, worker_headers, item)
+    health = {"kind": "HEALTH", "record_date": None, "tray_category": None, "label_count": None}
+    upload(client, worker_headers, house, observation_id=item["id"], **health)
+    client.patch(
+        f"/api/health-observations/{item['id']}",
+        headers=owner_headers,
+        json={"vet_advice": "Pisahkan ayam yang lemas."},
+    )
+
+    response = client.get(f"/api/health-observations/{item['id']}/pdf", headers=owner_headers)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "laporan-kesehatan-kandang-1-" in response.headers["content-disposition"]
+
+    reader = PdfReader(io.BytesIO(response.content))
+    text = " ".join(page.extract_text() for page in reader.pages)
+    for expected in [
+        "Laporan Pengamatan Kesehatan Ayam",
+        "Kandang 1",
+        "Pekerja Satu",
+        "Lesu",
+        "Ngorok atau sesak napas",
+        "Bulu kusam - sejak 2 hari",
+        "15 ekor",
+        "Pisahkan ayam yang lemas.",
+        "bukan diagnosis",
+        "Foto 1",
+    ]:
+        assert expected in text, expected
+    assert sum(len(page.images) for page in reader.pages) == 1
+
+
+def test_worker_cannot_download_pdf(client: TestClient, worker_headers: dict) -> None:
+    item = observation(house_id(client, worker_headers))
+    push(client, worker_headers, item)
+    response = client.get(f"/api/health-observations/{item['id']}/pdf", headers=worker_headers)
+    assert response.status_code == 403
