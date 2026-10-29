@@ -147,7 +147,11 @@ test('worker screens fit 360 px and every touch target is at least 44 px', async
     const problems = await page.evaluate(() => {
       const found: string[] = []
       if (document.documentElement.scrollWidth > window.innerWidth) found.push('horizontal scroll')
-      for (const el of document.querySelectorAll<HTMLElement>('button, a, input, select, textarea')) {
+      for (const control of document.querySelectorAll<HTMLElement>('button, a, input, select, textarea')) {
+        // Hidden camera inputs and checkboxes are tapped through their label.
+        const viaLabel = control.matches('.visually-hidden, [type=checkbox]')
+        const el = viaLabel ? (control.closest('label') ?? document.querySelector<HTMLElement>(`label[for="${control.id}"]`)) : control
+        if (!el) continue
         const box = el.getBoundingClientRect()
         if (box.width === 0) continue // hidden
         if (box.height < 44) found.push(`${el.tagName} "${el.textContent?.trim()}" is ${box.height}px`)
@@ -163,4 +167,9 @@ test('worker screens fit 360 px and every touch target is at least 44 px', async
   await page.getByRole('button', { name: /Kandang 3/ }).click()
   await expect(page.getByRole('heading', { name: 'Kandang 3' })).toBeVisible()
   await check('record form')
+  await page.getByRole('link', { name: '← Kembali' }).click()
+  await page.getByRole('link', { name: /Kesehatan ayam/ }).click()
+  await check('health reports')
+  await page.getByRole('link', { name: 'Laporkan kesehatan ayam' }).click()
+  await check('health form')
 })

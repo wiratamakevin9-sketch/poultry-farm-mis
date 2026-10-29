@@ -30,7 +30,7 @@ export default defineConfig({
         'cd ../backend && uv run python -m app.reset_db && ' +
         'uv run uvicorn app.main:app --port 8001',
       url: `${API_URL}/api/health`,
-      env: { DATABASE_URL: E2E_DB },
+      env: { DATABASE_URL: E2E_DB, PHOTO_DIR: 'data/e2e-photos' },
       reuseExistingServer: false,
       timeout: 120_000,
     },
