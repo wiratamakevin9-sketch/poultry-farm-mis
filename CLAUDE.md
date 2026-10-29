@@ -7,7 +7,22 @@ chicken houses is weak or absent, so data entry MUST work offline.
 ## Users and roles
 - Owner: full access (users, houses, flocks, schedules, sales, dashboard, reports, AI).
 - Farm Worker: daily data entry only, on a low-cost Android phone, often offline.
-- Veterinarian: NOT a system user. Domain expert only.
+- Veterinarian: NOT a system user. Domain expert only. Receives health observations from
+  the owner as a PDF (WhatsApp or email).
+
+## Added use cases (see docs/decisions/0002-photos-and-health-observations.md)
+- UC13 Capture Egg Tray Photo (Farm Worker): eggs are already sorted at the farm. The
+  worker photographs the remainder tray of good eggs and the cracked and dirty trays.
+  Iteration 2: photos are captured offline, synced and stored with the counts the worker
+  entered (training labels). Iteration 3: an on-device model suggests the counts; the
+  worker always confirms or corrects them.
+- UC14 Record Health Observation with Photo (Farm Worker): symptoms checklist, notes,
+  estimated affected birds and 1-3 photos, offline. The owner sees it (status New ->
+  Seen -> Forwarded -> Closed), shares it with the veterinarian as a PDF via WhatsApp or
+  email, and records the vet's advice. Owner alert: a "Baru" badge in the app; push
+  notifications come later.
+- Daily records have a separate "dirty eggs" count (eggs_dirty) next to good, cracked
+  and rejected.
 
 ## Tech stack (do not change without asking)
 - Frontend: React + TypeScript + Vite, installable PWA (vite-plugin-pwa / Workbox),
