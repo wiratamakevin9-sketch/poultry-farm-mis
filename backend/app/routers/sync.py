@@ -3,6 +3,7 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.deps import CurrentUser, DbSession, WorkerUser
 from app.farm_time import farm_date, farm_today
 from app.models import (
@@ -185,4 +186,5 @@ def pull(db: DbSession, user: CurrentUser, since: int = Query(default=0, ge=0)) 
         houses=[house_out(db, h) for h in houses],
         conflicts=open_conflicts(db, user),
         server_today=farm_today(),
+        eggs_per_tray=settings.eggs_per_tray,
     )

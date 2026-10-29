@@ -8,6 +8,18 @@ import { farmDate } from '../../lib/farmDate'
 import { WorkerProvider } from '../../sync/WorkerContext'
 import RecordForm from './RecordForm'
 
+// The camera photo is shrunk with a canvas, which jsdom does not have.
+vi.mock('../../lib/image', () => ({
+  compressPhoto: vi.fn(async () => ({
+    blob: 'full-image' as unknown as Blob,
+    thumb: 'thumbnail' as unknown as Blob,
+    width: 1280,
+    height: 960,
+  })),
+}))
+URL.createObjectURL = vi.fn(() => 'blob:thumb')
+URL.revokeObjectURL = vi.fn()
+
 const USER = { id: 'u1', username: 'pekerja1', full_name: 'Pekerja Satu', role: 'WORKER' as const, is_active: true }
 const HOUSE: House = {
   id: 'h1',
@@ -120,4 +132,40 @@ describe('RecordForm', () => {
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Simpan' })).toBeDisabled()
   })
+
+  it('counts good eggs from full trays and the remainder', async () => {
+    const user = userEvent.setup()
+    renderForm()
+    await screen.findByText('Kandang 1')
+    await fill(user, { 'Tray penuh': '133', 'Sisa butir': '17' })
+    expect(screen.getByRole('textbox', { name: /^Telur bagus/ })).toHaveValue('4007')
+    await fill(user, { 'Sisa butir': '30' })
+    expect(screen.getByText('Sisa harus kurang dari 30 butir.')).toBeInTheDocument()
+  })
+
+  it('saves tray photos with the counts as labels', async () => {
+    const user = userEvent.setup()
+    renderForm()
+    await screen.findByText('Kandang 1')
+    await fill(user, { ...VALID, 'Telur retak': '25', 'Telur kotor': '12' })
+    await fill(user, { 'Tray penuh': '133', 'Sisa butir': '10' })
+    const photo = new File(['jpeg'], 'tray.jpg', { type: 'image/jpeg' })
+    await user.upload(screen.getByLabelText('Foto sisa tray telur bagus'), photo)
+    await user.upload(screen.getByLabelText('Foto tray telur retak'), photo)
+    await user.upload(screen.getByLabelText('Foto tray telur kotor'), photo)
+    expect(await screen.findAllByText('Belum disimpan')).toHaveLength(3)
+    // Not stored until the record is saved, so leaving the form leaves nothing behind.
+    expect(await db.photos.count()).toBe(0)
+
+    await user.click(screen.getByRole('button', { name: 'Simpan' }))
+    expect(await screen.findByText('Beranda')).toBeInTheDocument()
+
+    const photos = await db.photos.toArray()
+    const labels = Object.fromEntries(photos.map((p) => [p.tray_category, p.label_count]))
+    expect(labels).toEqual({ GOOD_REMAINDER: 10, CRACKED: 25, DIRTY: 12 })
+    expect(photos.every((p) => p.status === 'pending' && p.record_date === farmDate())).toBe(true)
+    const [record] = await db.records.toArray()
+    expect(record.eggs_good).toBe(4000)
+  })
 })
+

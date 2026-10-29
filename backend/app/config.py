@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     max_photo_bytes: int = 3 * 1024 * 1024
     # Photos are re-encoded to at most this many pixels on the long side.
     max_photo_side: int = 1600
+    # Eggs on a full tray; the phone uses it for "full trays x eggs + remainder".
+    eggs_per_tray: int = 30
 
 
 settings = Settings()

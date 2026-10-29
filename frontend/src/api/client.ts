@@ -86,7 +86,15 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   if (!response.ok) throw new ApiError(response.status, await errorMessage(response))
   if (response.status === 204) return undefined as T
+  if (init.headers && new Headers(init.headers).get('Accept') === 'application/octet-stream') {
+    return (await response.blob()) as T
+  }
   return (await response.json()) as T
+}
+
+/** Download a protected file (photo, PDF) with the stored login. */
+export function apiBlob(path: string): Promise<Blob> {
+  return api<Blob>(path, { headers: { Accept: 'application/octet-stream' } })
 }
 
 export async function login(username: string, password: string): Promise<Session> {

@@ -2,13 +2,15 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import NumberField from '../../components/NumberField'
-import type { LocalRecord } from '../../db/db'
+import { getMeta, type LocalRecord, type RecordValues, type TrayCategory } from '../../db/db'
+import { addPhoto, removePhoto, trayPhotos } from '../../db/photos'
 import { findRecord, liveBirdsAtStart, saveRecord } from '../../db/records'
 import { farmDate } from '../../lib/farmDate'
 import { formatDate, formatNumber } from '../../lib/format'
 import { feedPerBirdGrams, hdp } from '../../lib/indicators'
 import { parseDecimal, validateRecord, type RecordForm as Form } from '../../lib/validation'
 import { useWorker } from '../../sync/WorkerContext'
+import TrayPhotos, { type NewTrayPhoto } from './TrayPhotos'
 
 const EMPTY: Form = {
   eggs_good: '',
@@ -41,6 +43,13 @@ function count(text: string): number {
   return /^\d+$/.test(text.trim()) ? Number(text) : 0
 }
 
+/** Eggs on a tray photo as counted by the worker: the training label for Iteration 3. */
+function trayLabel(category: TrayCategory, values: RecordValues, remainder: number | null) {
+  if (category === 'CRACKED') return values.eggs_cracked
+  if (category === 'DIRTY') return values.eggs_dirty
+  return remainder // only known when the tray helper was used
+}
+
 export default function RecordForm() {
   const { houseId = '', date = '' } = useParams()
   const { db, user, sync } = useWorker()
@@ -63,6 +72,12 @@ export default function RecordForm() {
   const [touched, setTouched] = useState<Partial<Record<keyof Form, boolean>>>({})
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
+  // Tray helper: good eggs = full trays x eggs per tray + remainder (ADR 0002).
+  const [trays, setTrays] = useState('')
+  const [remainder, setRemainder] = useState('')
+  const [newPhotos, setNewPhotos] = useState<NewTrayPhoto[]>([])
+  const eggsPerTray = useLiveQuery(() => getMeta(db, 'eggs_per_tray', 30), [db], 30)
+  const savedPhotos = useLiveQuery(() => trayPhotos(db, houseId, date), [db, houseId, date], [])
 
   // Fill the form once with the saved record (if any). A record pulled from the server
   // for this day is edited instead of creating a second one.
@@ -104,19 +119,50 @@ export default function RecordForm() {
     return () => setTouched((t) => ({ ...t, [field]: true }))
   }
 
+  const usingTrays = trays.trim() !== '' || remainder.trim() !== ''
+  const remainderError =
+    count(remainder) >= eggsPerTray ? `Sisa harus kurang dari ${eggsPerTray} butir.` : undefined
+
+  function updateTrays(nextTrays: string, nextRemainder: string) {
+    setTrays(nextTrays)
+    setRemainder(nextRemainder)
+    if (nextTrays.trim() === '' && nextRemainder.trim() === '') return
+    const good = count(nextTrays) * eggsPerTray + count(nextRemainder)
+    setForm((f) => ({ ...f, eggs_good: String(good) }))
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault()
     setSubmitted(true)
-    if (!values || !house || !flock) return
+    if (!values || !house || !flock || remainderError) return
     setSaving(true)
+    const remainderLabel = usingTrays ? count(remainder) : null
     try {
-      await saveRecord(db, {
-        id: existing?.id,
-        house_id: house.id,
-        flock_id: flock.id,
-        record_date: date,
-        values,
-        user_id: user.id,
+      await db.transaction('rw', db.records, db.outbox, db.photos, async () => {
+        await saveRecord(db, {
+          id: existing?.id,
+          house_id: house.id,
+          flock_id: flock.id,
+          record_date: date,
+          values,
+          user_id: user.id,
+        })
+        for (const { category, photo } of newPhotos) {
+          await addPhoto(db, {
+            kind: 'TRAY',
+            house_id: house.id,
+            record_date: date,
+            tray_category: category,
+            label_count: trayLabel(category, values, remainderLabel),
+            ...photo,
+          })
+        }
+        // Photos not sent yet get the counts as they are now.
+        for (const photo of savedPhotos) {
+          if (photo.status !== 'pending' || !photo.tray_category) continue
+          const label = trayLabel(photo.tray_category, values, remainderLabel)
+          if (label !== null) await db.photos.update(photo.id, { label_count: label })
+        }
       })
       sync.sync() // send right away if there is signal; otherwise it waits in the queue
       navigate(date === today ? '/' : '/?tanggal=kemarin', { state: { saved: house.name } })
@@ -156,6 +202,16 @@ export default function RecordForm() {
 
       <section className="card stack">
         <h2>Telur (butir)</h2>
+        <div className="grid-2">
+          <NumberField id="trays" label="Tray penuh" value={trays} optional
+            onChange={(v) => updateTrays(v, remainder)} />
+          <NumberField id="remainder" label="Sisa butir" value={remainder} optional
+            onChange={(v) => updateTrays(trays, v)} error={remainderError} />
+        </div>
+        <p className="muted" style={{ margin: 0 }}>
+          Isi tray penuh dan sisa untuk menghitung telur bagus otomatis ({eggsPerTray} butir per
+          tray), atau ketik langsung di bawah.
+        </p>
         <NumberField id="eggs_good" label="Telur bagus" value={form.eggs_good}
           onChange={update('eggs_good')} onBlur={blur('eggs_good')} error={show('eggs_good')} />
         <div className="grid-2">
@@ -196,6 +252,17 @@ export default function RecordForm() {
             onChange={(e) => update('notes')(e.target.value)} />
         </label>
       </section>
+
+      <TrayPhotos
+        saved={savedPhotos}
+        added={newPhotos}
+        onAdd={(category, photo) =>
+          setNewPhotos((list) => [...list, { key: crypto.randomUUID(), category, photo }])
+        }
+        onRemoveAdded={(key) => setNewPhotos((list) => list.filter((p) => p.key !== key))}
+        onRemoveSaved={(id) => removePhoto(db, id)}
+        disabled={inConflict || !!errors.record_date}
+      />
 
       <section className="card" aria-label="Pratinjau">
         <div className="preview">

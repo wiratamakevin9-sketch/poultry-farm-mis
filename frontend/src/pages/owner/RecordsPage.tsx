@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../api/client'
-import type { House, OwnerRecord } from '../../api/types'
+import type { House, OwnerRecord, ServerPhoto } from '../../api/types'
+import AuthImage from '../../components/AuthImage'
 import { addDays, farmDate } from '../../lib/farmDate'
 import { formatDate, formatDateTime, formatNumber } from '../../lib/format'
+import { TRAY_LABELS } from '../../lib/labels'
 
 export default function RecordsPage() {
   const today = farmDate()
@@ -12,6 +14,21 @@ export default function RecordsPage() {
   const [dateTo, setDateTo] = useState(today)
   const [records, setRecords] = useState<OwnerRecord[] | null>(null)
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
+  const [viewing, setViewing] = useState<{ record: OwnerRecord; photos: ServerPhoto[] } | null>(
+    null,
+  )
+
+  async function showPhotos(record: OwnerRecord) {
+    const params = new URLSearchParams({
+      house_id: record.house_id,
+      record_date: record.record_date,
+    })
+    try {
+      setViewing({ record, photos: await api<ServerPhoto[]>(`/photos?${params}`) })
+    } catch (err) {
+      setMessage({ kind: 'error', text: (err as Error).message })
+    }
+  }
 
   const load = useCallback(async () => {
     const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo })
@@ -80,6 +97,33 @@ export default function RecordsPage() {
         </div>
       )}
 
+      {viewing && (
+        <section className="card stack" aria-label="Foto tray">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <h2 style={{ margin: 0 }}>
+              Foto tray · {viewing.record.house_name}, {formatDate(viewing.record.record_date)}
+            </h2>
+            <button className="small secondary" onClick={() => setViewing(null)}>
+              Tutup
+            </button>
+          </div>
+          <div className="photo-grid">
+            {viewing.photos.map((photo) => {
+              const label = photo.tray_category ? TRAY_LABELS[photo.tray_category] : 'Foto'
+              return (
+                <figure key={photo.id}>
+                  <AuthImage photoId={photo.id} alt={label} />
+                  <figcaption className="muted">
+                    {label}
+                    {photo.label_count !== null && ` · ${formatNumber(photo.label_count)} butir`}
+                  </figcaption>
+                </figure>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
       <section className="card">
         {records === null ? (
           <p className="muted">Memuat…</p>
@@ -99,6 +143,7 @@ export default function RecordsPage() {
                   <th className="num">Afkir</th>
                   <th>Diisi oleh</th>
                   <th>Sinkron</th>
+                  <th>Foto</th>
                   <th></th>
                 </tr>
               </thead>
@@ -116,6 +161,15 @@ export default function RecordsPage() {
                     <td className="num">{formatNumber(r.culled)}</td>
                     <td>{r.updated_by_name}</td>
                     <td>{formatDateTime(r.server_updated_at)}</td>
+                    <td>
+                      {r.photo_count > 0 ? (
+                        <button className="small secondary" onClick={() => showPhotos(r)}>
+                          Lihat ({r.photo_count})
+                        </button>
+                      ) : (
+                        '–'
+                      )}
+                    </td>
                     <td>
                       <button className="small danger" onClick={() => remove(r)}
                         aria-label={`Hapus catatan ${r.house_name} ${formatDate(r.record_date)}`}>

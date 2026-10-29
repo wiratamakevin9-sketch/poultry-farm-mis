@@ -59,7 +59,7 @@ function serverRecord(changes: Partial<ServerRecord>): ServerRecord {
 }
 
 function pullPage(records: ServerRecord[], extra: object = {}) {
-  return { records, cursor: 10, has_more: false, houses: [], conflicts: [], server_today: '2026-10-26', ...extra }
+  return { records, cursor: 10, has_more: false, houses: [], conflicts: [], server_today: '2026-10-26', eggs_per_tray: 30, ...extra }
 }
 
 beforeEach(() => {

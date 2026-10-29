@@ -171,6 +171,7 @@ class OwnerRecordOut(RecordOut):
     live_birds: int  # at the start of the day
     hdp: float  # hen-day production, %
     feed_per_bird_g: float
+    photo_count: int  # egg tray photos for this house and day
 
 
 # ---------- sync ----------
@@ -220,6 +221,7 @@ class PullResponse(BaseModel):
     houses: list[HouseOut]
     conflicts: list[ConflictOut]
     server_today: date
+    eggs_per_tray: int
 
 
 class RecordValues(BaseModel):

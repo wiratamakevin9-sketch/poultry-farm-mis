@@ -515,3 +515,32 @@ label.button:focus-within {
   gap: 4px;
   font-size: 0.9rem;
 }
+
+.photo-full {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+.photo-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.photo-grid figure {
+  margin: 0;
+}
+
+/* Field labels stay on one line: "Pakan (kg) – opsional". */
+.field > label {
+  display: block;
+}

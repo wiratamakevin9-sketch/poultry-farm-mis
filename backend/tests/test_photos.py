@@ -158,3 +158,19 @@ def test_owner_lists_photos_of_a_record(
     ).json()
     assert sorted(p["tray_category"] for p in photos) == ["CRACKED", "DIRTY"]
     assert client.get("/api/photos", headers=worker_headers).status_code == 403
+
+
+def test_owner_records_show_photo_count(
+    client: TestClient, worker_headers: dict, owner_headers: dict
+) -> None:
+    house = house_with_record(client, worker_headers)
+    upload(client, worker_headers, house, tray_category="GOOD_REMAINDER", label_count="17")
+    upload(client, worker_headers, house, tray_category="CRACKED")
+    [row] = client.get("/api/records", headers=owner_headers).json()
+    assert row["photo_count"] == 2
+
+
+def test_pull_tells_the_phone_how_many_eggs_fit_a_tray(
+    client: TestClient, worker_headers: dict
+) -> None:
+    assert client.get("/api/sync/pull", headers=worker_headers).json()["eggs_per_tray"] == 30

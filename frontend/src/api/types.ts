@@ -47,4 +47,16 @@ export interface OwnerRecord {
   live_birds: number
   hdp: number
   feed_per_bird_g: number
+  photo_count: number
+}
+
+export interface ServerPhoto {
+  id: string
+  kind: 'TRAY' | 'HEALTH'
+  house_id: string
+  record_date: string | null
+  tray_category: 'GOOD_REMAINDER' | 'CRACKED' | 'DIRTY' | null
+  label_count: number | null
+  observation_id: string | null
+  taken_at: string
 }

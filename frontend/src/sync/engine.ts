@@ -27,6 +27,7 @@ interface PullResponse {
   houses: House[]
   conflicts: Conflict[]
   server_today: string
+  eggs_per_tray: number
 }
 
 function toPayload(record: LocalRecord) {
@@ -167,6 +168,7 @@ export async function pull(db: FarmDb): Promise<void> {
       await applyConflicts(db, page.conflicts)
       await setMeta(db, 'cursor', page.cursor)
       await setMeta(db, 'server_today', page.server_today)
+      await setMeta(db, 'eggs_per_tray', page.eggs_per_tray)
     })
     cursor = page.cursor
     if (!page.has_more) break

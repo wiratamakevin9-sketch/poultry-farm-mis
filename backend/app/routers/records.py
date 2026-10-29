@@ -3,10 +3,10 @@ from collections import defaultdict
 from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.deps import DbSession, OwnerUser
-from app.models import ChickenHouse, DailyRecord, Flock, User
+from app.models import ChickenHouse, DailyRecord, Flock, Photo, PhotoKind, User
 from app.records import lock_record_writes, next_change_seq, record_out
 from app.schemas import OwnerRecordOut
 
@@ -51,6 +51,14 @@ def list_records(
     names: dict[uuid.UUID, str] = defaultdict(str)
     names.update({u.id: u.full_name for u in db.scalars(select(User))})
     houses = {h.id: h.name for h in db.scalars(select(ChickenHouse))}
+    photo_counts = {
+        (house, day): count
+        for house, day, count in db.execute(
+            select(Photo.house_id, Photo.record_date, func.count())
+            .where(Photo.kind == PhotoKind.TRAY)
+            .group_by(Photo.house_id, Photo.record_date)
+        )
+    }
 
     out = []
     for record in records:
@@ -65,6 +73,7 @@ def list_records(
                 live_birds=alive,
                 hdp=round(eggs / alive * 100, 2) if alive else 0.0,
                 feed_per_bird_g=round(float(record.feed_kg) * 1000 / alive, 1) if alive else 0.0,
+                photo_count=photo_counts.get((record.house_id, record.record_date), 0),
             )
         )
     return out

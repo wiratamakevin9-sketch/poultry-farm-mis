@@ -10,10 +10,11 @@ const STATUS = {
 interface Props {
   photo: LocalPhoto
   caption: string
+  unsaved?: boolean // taken in the form, not stored yet
   onRemove?: () => void
 }
 
-export default function PhotoThumb({ photo, caption, onRemove }: Props) {
+export default function PhotoThumb({ photo, caption, unsaved = false, onRemove }: Props) {
   const [url, setUrl] = useState<string>()
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export default function PhotoThumb({ photo, caption, onRemove }: Props) {
     return () => URL.revokeObjectURL(objectUrl)
   }, [photo.thumb])
 
-  const status = STATUS[photo.status]
+  const status = unsaved ? { text: 'Belum disimpan', badge: '' } : STATUS[photo.status]
   return (
     <figure className="photo-thumb">
       {url && <img src={url} alt={caption} width={photo.width} height={photo.height} />}
