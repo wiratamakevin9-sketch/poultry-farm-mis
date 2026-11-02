@@ -24,6 +24,13 @@ chicken houses is weak or absent, so data entry MUST work offline.
 - Daily records have a separate "dirty eggs" count (eggs_dirty) next to good, cracked
   and rejected.
 
+## Iteration 2 farm modules (see docs/decisions/0003-iteration-2-farm-modules.md)
+- Egg sales in kg and price per kg, per grade (good, cracked, dirty); rejected eggs are
+  never sold. Eggs from a house in a withdrawal period are withheld and cannot be sold.
+- One feed stock: purchases in, daily feed out, low-stock warning under 7 days.
+- Vaccinations scheduled by the owner, confirmed by the worker offline. Treatments are
+  recorded by the owner; sellable again from end date + withdrawal days + 1.
+
 ## Tech stack (do not change without asking)
 - Frontend: React + TypeScript + Vite, installable PWA (vite-plugin-pwa / Workbox),
   React Router, Dexie.js on IndexedDB for offline storage.
