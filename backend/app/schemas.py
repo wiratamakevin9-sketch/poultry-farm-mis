@@ -14,6 +14,7 @@ from app.models import (
     PhotoKind,
     Role,
     TrayCategory,
+    VaccineMethod,
 )
 
 
@@ -322,3 +323,37 @@ class ForwardRequest(BaseModel):
 
 class ObservationSummary(BaseModel):
     new_count: int
+
+
+# ---------- vaccinations (ADR 0003) ----------
+
+VaccinationStatus = Literal["SCHEDULED", "OVERDUE", "DONE"]
+
+
+class VaccinationCreate(BaseModel):
+    house_id: uuid.UUID
+    scheduled_date: date
+    vaccine_name: str = Field(min_length=1, max_length=100)
+    method: VaccineMethod
+    notes: str = Field(default="", max_length=500)
+
+
+class VaccinationUpdate(BaseModel):
+    scheduled_date: date | None = None
+    vaccine_name: str | None = Field(default=None, min_length=1, max_length=100)
+    method: VaccineMethod | None = None
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class VaccinationOut(ORMModel):
+    id: uuid.UUID
+    house_id: uuid.UUID
+    house_name: str
+    scheduled_date: date
+    vaccine_name: str
+    method: VaccineMethod
+    notes: str
+    status: VaccinationStatus
+    done_at: datetime | None
+    done_by_name: str | None
+    done_note: str

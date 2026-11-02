@@ -80,3 +80,17 @@ export interface OwnerObservation {
   created_by_name: string
   photo_ids: string[]
 }
+
+export interface Vaccination {
+  id: string
+  house_id: string
+  house_name: string
+  scheduled_date: string
+  vaccine_name: string
+  method: import('../lib/labels').VaccineMethod
+  notes: string
+  status: 'SCHEDULED' | 'OVERDUE' | 'DONE'
+  done_at: string | null
+  done_by_name: string | null
+  done_note: string
+}

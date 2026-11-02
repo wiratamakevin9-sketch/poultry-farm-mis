@@ -31,7 +31,7 @@ describe('App with a session', () => {
       user: { id: '1', username: 'pemilik', full_name: 'Pemilik', role: 'OWNER', is_active: true },
     })
     renderApp()
-    expect(screen.getByRole('link', { name: 'Pengguna' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Lainnya' })).toBeInTheDocument()
   })
 
   it('does not show owner menu to a worker', () => {
@@ -41,6 +41,6 @@ describe('App with a session', () => {
       user: { id: '2', username: 'pekerja1', full_name: 'Pekerja', role: 'WORKER', is_active: true },
     })
     renderApp()
-    expect(screen.queryByRole('link', { name: 'Pengguna' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Lainnya' })).not.toBeInTheDocument()
   })
 })

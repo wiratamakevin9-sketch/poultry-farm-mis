@@ -60,12 +60,15 @@ a {
 /* ---------- layout ---------- */
 
 .app-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: var(--color-primary);
   color: var(--color-on-primary);
   padding: 4px 16px 8px;
+}
+
+.app-header--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .app-header__row {

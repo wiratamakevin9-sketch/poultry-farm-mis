@@ -4,10 +4,12 @@ import { useSession } from './auth/useSession'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import HousesPage from './pages/owner/HousesPage'
+import MorePage from './pages/owner/MorePage'
 import OwnerHealthDetail from './pages/owner/OwnerHealthDetail'
 import OwnerHealthPage from './pages/owner/OwnerHealthPage'
 import OwnerConflictsPage from './pages/owner/OwnerConflictsPage'
 import RecordsPage from './pages/owner/RecordsPage'
+import SchedulePage from './pages/owner/SchedulePage'
 import UsersPage from './pages/owner/UsersPage'
 import { useNewHealthCount } from './pages/owner/useNewHealthCount'
 import WorkerApp from './pages/worker/WorkerApp'
@@ -26,7 +28,6 @@ function OwnerApp({ user }: { user: SessionUser }) {
   const newHealth = useNewHealthCount()
   const links = [
     { to: '/pemilik/catatan', label: 'Catatan' },
-    { to: '/pemilik/konflik', label: 'Konflik' },
     {
       to: '/pemilik/kesehatan',
       label: (
@@ -36,8 +37,8 @@ function OwnerApp({ user }: { user: SessionUser }) {
         </>
       ),
     },
-    { to: '/pemilik/kandang', label: 'Kandang' },
-    { to: '/pemilik/pengguna', label: 'Pengguna' },
+    { to: '/pemilik/jadwal', label: 'Jadwal' },
+    { to: '/pemilik/lainnya', label: 'Lainnya' },
   ]
   return (
     <Layout user={user} links={links}>
@@ -46,6 +47,8 @@ function OwnerApp({ user }: { user: SessionUser }) {
         <Route path="/pemilik/konflik" element={<OwnerConflictsPage />} />
         <Route path="/pemilik/kesehatan" element={<OwnerHealthPage />} />
         <Route path="/pemilik/kesehatan/:id" element={<OwnerHealthDetail />} />
+        <Route path="/pemilik/jadwal" element={<SchedulePage />} />
+        <Route path="/pemilik/lainnya" element={<MorePage />} />
         <Route path="/pemilik/kandang" element={<HousesPage />} />
         <Route path="/pemilik/pengguna" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/pemilik/catatan" replace />} />

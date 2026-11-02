@@ -65,6 +65,14 @@ class ForwardChannel(enum.StrEnum):
     OTHER = "OTHER"
 
 
+class VaccineMethod(enum.StrEnum):
+    DRINKING_WATER = "DRINKING_WATER"
+    EYE_DROP = "EYE_DROP"
+    INJECTION = "INJECTION"
+    SPRAY = "SPRAY"
+    OTHER = "OTHER"
+
+
 class ConflictResolution(enum.StrEnum):
     KEEP_SERVER = "KEEP_SERVER"
     TAKE_DEVICE = "TAKE_DEVICE"
@@ -271,3 +279,22 @@ class HealthObservation(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class VaccinationSchedule(TimestampMixin, Base):
+    """A vaccination planned by the owner and confirmed by a worker (ADR 0003)."""
+
+    __tablename__ = "vaccination_schedules"
+    __table_args__ = (Index("ix_vaccination_schedules_date", "scheduled_date"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    house_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chicken_houses.id"))
+    scheduled_date: Mapped[date] = mapped_column(Date)
+    vaccine_name: Mapped[str] = mapped_column(String(100))
+    method: Mapped[VaccineMethod] = mapped_column(_enum(VaccineMethod, "vaccine_method"))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    # Filled in when a worker confirms it (possibly offline, synced later).
+    done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    done_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    done_note: Mapped[str] = mapped_column(Text, default="")

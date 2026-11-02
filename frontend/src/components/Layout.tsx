@@ -18,7 +18,8 @@ export default function Layout({ user, links, status, logoutWarning, children }:
 
   return (
     <>
-      <header className="app-header">
+      {/* Workers need the sync status visible at all times; the owner's menu can scroll away. */}
+      <header className={`app-header ${status ? 'app-header--sticky' : ''}`}>
         <div className="app-header__row">
           <span>
             <span className="app-header__title">Beneng Bahagia</span>
