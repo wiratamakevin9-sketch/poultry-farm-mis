@@ -28,6 +28,7 @@ from app.records import (
 from app.routers.conflicts import open_conflicts
 from app.routers.health import worker_observations
 from app.routers.houses import active_flock, house_out
+from app.routers.vaccinations import worker_vaccinations
 from app.schemas import PullResponse, PushRequest, PushResponse, PushResult, RecordIn
 from app.validation import validate_record
 
@@ -188,6 +189,7 @@ def pull(db: DbSession, user: CurrentUser, since: int = Query(default=0, ge=0)) 
         houses=[house_out(db, h) for h in houses],
         conflicts=open_conflicts(db, user),
         observations=worker_observations(db, user) if user.role == Role.WORKER else [],
+        vaccinations=worker_vaccinations(db) if user.role == Role.WORKER else [],
         server_today=farm_today(),
         eggs_per_tray=settings.eggs_per_tray,
     )

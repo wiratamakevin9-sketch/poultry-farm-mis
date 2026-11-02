@@ -1,18 +1,27 @@
 """Vaccination schedules (ADR 0003): planned by the owner, confirmed by a worker."""
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.deps import DbSession, OwnerUser
+from app.deps import DbSession, OwnerUser, WorkerUser
 from app.farm_time import farm_today
 from app.models import ChickenHouse, User, VaccinationSchedule
-from app.schemas import VaccinationCreate, VaccinationOut, VaccinationUpdate
+from app.schemas import (
+    PushResponse,
+    PushResult,
+    VaccinationConfirmation,
+    VaccinationConfirmPush,
+    VaccinationCreate,
+    VaccinationOut,
+    VaccinationUpdate,
+)
 
-router = APIRouter(prefix="/api/vaccinations", tags=["vaccinations"])
+router = APIRouter(tags=["vaccinations"])
 
 
 def vaccination_status(item: VaccinationSchedule, today: date) -> str:
@@ -45,7 +54,7 @@ def _get(db: Session, vaccination_id: uuid.UUID) -> VaccinationSchedule:
     return item
 
 
-@router.get("")
+@router.get("/api/vaccinations")
 def list_vaccinations(
     db: DbSession,
     _: OwnerUser,
@@ -65,7 +74,7 @@ def list_vaccinations(
     return [vaccination_out(db, item) for item in db.scalars(query)]
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("/api/vaccinations", status_code=status.HTTP_201_CREATED)
 def create_vaccination(body: VaccinationCreate, db: DbSession, owner: OwnerUser) -> VaccinationOut:
     house = db.get(ChickenHouse, body.house_id)
     if house is None or not house.is_active:
@@ -83,7 +92,7 @@ def create_vaccination(body: VaccinationCreate, db: DbSession, owner: OwnerUser)
     return vaccination_out(db, item)
 
 
-@router.patch("/{vaccination_id}")
+@router.patch("/api/vaccinations/{vaccination_id}")
 def update_vaccination(
     vaccination_id: uuid.UUID, body: VaccinationUpdate, db: DbSession, _: OwnerUser
 ) -> VaccinationOut:
@@ -99,7 +108,7 @@ def update_vaccination(
     return vaccination_out(db, item)
 
 
-@router.delete("/{vaccination_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/api/vaccinations/{vaccination_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_vaccination(vaccination_id: uuid.UUID, db: DbSession, _: OwnerUser) -> None:
     item = _get(db, vaccination_id)
     if item.done_at is not None:
@@ -108,3 +117,55 @@ def delete_vaccination(vaccination_id: uuid.UUID, db: DbSession, _: OwnerUser) -
         )
     db.delete(item)
     db.commit()
+
+
+# ---------- workers ----------
+
+
+def worker_vaccinations(db: Session) -> list[VaccinationOut]:
+    """From a week ago (to catch missed ones) until tomorrow, for the phone."""
+    today = farm_today()
+    items = db.scalars(
+        select(VaccinationSchedule)
+        .where(
+            VaccinationSchedule.scheduled_date >= today - timedelta(days=7),
+            VaccinationSchedule.scheduled_date <= today + timedelta(days=1),
+        )
+        .order_by(VaccinationSchedule.scheduled_date)
+    )
+    return [vaccination_out(db, item) for item in items]
+
+
+def _confirm_one(db: Session, raw: dict, user) -> PushResult:
+    raw_id = str(raw.get("schedule_id", ""))
+    try:
+        confirmation = VaccinationConfirmation.model_validate(raw)
+    except ValidationError:
+        return PushResult(id=raw_id, status="rejected", errors={"_": "Data tidak valid."})
+    item = db.get(VaccinationSchedule, confirmation.schedule_id)
+    if item is None:
+        return PushResult(
+            id=raw_id, status="rejected", errors={"_": "Jadwal ini sudah dihapus pemilik."}
+        )
+    if item.done_at is not None:
+        # Already confirmed (this phone sent it twice, or another worker did it first).
+        return PushResult(id=raw_id, status="accepted")
+    if confirmation.confirmed_at > datetime.now(UTC) + timedelta(minutes=5):
+        return PushResult(
+            id=raw_id,
+            status="rejected",
+            errors={"_": "Waktu konfirmasi tidak boleh di masa depan."},
+        )
+    item.done_at = confirmation.confirmed_at
+    item.done_by = user.id
+    item.done_note = confirmation.note.strip()
+    return PushResult(id=raw_id, status="accepted")
+
+
+@router.post("/api/sync/vaccinations")
+def push_confirmations(
+    body: VaccinationConfirmPush, db: DbSession, user: WorkerUser
+) -> PushResponse:
+    results = [_confirm_one(db, raw, user) for raw in body.confirmations]
+    db.commit()
+    return PushResponse(results=results)

@@ -27,11 +27,12 @@ export function useSync(db: FarmDb, run: (db: FarmDb) => Promise<void> = syncNow
   const [online, setOnline] = useState(() => navigator.onLine)
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Daily records and health observations waiting to be sent.
+  // Daily records, health observations and vaccination confirmations waiting to be sent.
   const pending = useLiveQuery(
     async () =>
       (await countPending(db)) +
-      (await db.observations.where('sync_status').equals('pending').count()),
+      (await db.observations.where('sync_status').equals('pending').count()) +
+      (await db.vaccinations.where('confirm_status').equals('pending').count()),
     [db],
     0,
   )

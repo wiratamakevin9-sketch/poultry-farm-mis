@@ -108,3 +108,81 @@ def test_workers_cannot_manage_schedules(client: TestClient, worker_headers: dic
         },
     )
     assert response.status_code == 403
+
+
+def confirm(client: TestClient, headers: dict, *confirmations: dict) -> list[dict]:
+    response = client.post(
+        "/api/sync/vaccinations", headers=headers, json={"confirmations": list(confirmations)}
+    )
+    assert response.status_code == 200, response.text
+    return response.json()["results"]
+
+
+def test_worker_confirms_offline_and_it_is_idempotent(
+    client: TestClient, owner_headers: dict, worker_headers: dict
+) -> None:
+    item = schedule(client, owner_headers)
+    done = {
+        "schedule_id": item["id"],
+        "confirmed_at": datetime.now(UTC).isoformat(),
+        "note": "Semua ayam minum",
+    }
+    assert confirm(client, worker_headers, done)[0]["status"] == "accepted"
+    assert confirm(client, worker_headers, done)[0]["status"] == "accepted"  # sent again
+
+    [listed] = client.get("/api/vaccinations", headers=owner_headers).json()
+    assert listed["status"] == "DONE"
+    assert listed["done_by_name"] == "Pekerja Satu"
+    assert listed["done_note"] == "Semua ayam minum"
+
+
+def test_first_confirmation_wins(
+    client: TestClient, owner_headers: dict, worker_headers: dict
+) -> None:
+    from tests.conftest import auth_headers
+
+    item = schedule(client, owner_headers)
+    now = datetime.now(UTC).isoformat()
+    confirm(client, worker_headers, {"schedule_id": item["id"], "confirmed_at": now})
+    other = auth_headers(client, "pekerja2")
+    [result] = confirm(client, other, {"schedule_id": item["id"], "confirmed_at": now})
+    assert result["status"] == "accepted"
+    [listed] = client.get("/api/vaccinations", headers=owner_headers).json()
+    assert listed["done_by_name"] == "Pekerja Satu"
+
+
+def test_confirming_a_deleted_schedule_is_rejected(
+    client: TestClient, owner_headers: dict, worker_headers: dict
+) -> None:
+    item = schedule(client, owner_headers)
+    client.delete(f"/api/vaccinations/{item['id']}", headers=owner_headers)
+    [result] = confirm(
+        client,
+        worker_headers,
+        {"schedule_id": item["id"], "confirmed_at": datetime.now(UTC).isoformat()},
+    )
+    assert result["status"] == "rejected"
+    assert result["errors"]["_"] == "Jadwal ini sudah dihapus pemilik."
+
+
+def test_pull_gives_workers_last_week_until_tomorrow(
+    client: TestClient, owner_headers: dict, worker_headers: dict
+) -> None:
+    for days in (-8, -3, 0, 1, 2):
+        schedule(client, owner_headers, scheduled_date=(TODAY + timedelta(days=days)).isoformat())
+    pulled = client.get("/api/sync/pull", headers=worker_headers).json()["vaccinations"]
+    expected = sorted((TODAY + timedelta(days=d)).isoformat() for d in (-3, 0, 1))
+    assert sorted(v["scheduled_date"] for v in pulled) == expected
+    assert client.get("/api/sync/pull", headers=owner_headers).json()["vaccinations"] == []
+
+
+def test_owner_cannot_confirm(client: TestClient, owner_headers: dict) -> None:
+    item = schedule(client, owner_headers)
+    response = client.post(
+        "/api/sync/vaccinations",
+        headers=owner_headers,
+        json={
+            "confirmations": [{"schedule_id": item["id"], "confirmed_at": "2026-11-02T00:00:00Z"}]
+        },
+    )
+    assert response.status_code == 403

@@ -8,6 +8,7 @@ import {
   type LocalObservation,
   type LocalPhoto,
   type LocalRecord,
+  type LocalVaccination,
   type ServerRecord,
 } from '../db/db'
 
@@ -30,6 +31,7 @@ interface PullResponse {
   server_today: string
   eggs_per_tray: number
   observations: ServerObservation[]
+  vaccinations: Omit<LocalVaccination, 'confirm_status' | 'confirmed_at' | 'confirm_note'>[]
 }
 
 interface ServerObservation {
@@ -213,15 +215,60 @@ async function mergeObservations(db: FarmDb, observations: ServerObservation[]) 
   }
 }
 
+/** Send vaccinations the worker confirmed on this phone. */
+export async function pushVaccinations(db: FarmDb): Promise<void> {
+  const pending = await db.vaccinations.where('confirm_status').equals('pending').toArray()
+  if (pending.length === 0) return
+  const { results } = await api<{ results: PushResult[] }>('/sync/vaccinations', {
+    method: 'POST',
+    body: JSON.stringify({
+      confirmations: pending.map((v) => ({
+        schedule_id: v.id,
+        confirmed_at: v.confirmed_at,
+        note: v.confirm_note ?? '',
+      })),
+    }),
+  })
+  for (const result of results) {
+    await db.vaccinations.update(result.id, {
+      confirm_status: result.status === 'accepted' ? 'synced' : 'rejected',
+      errors: result.status === 'rejected' ? result.errors : undefined,
+    })
+  }
+}
+
+/** Replace the phone's list with the server's, keeping confirmations not sent yet. */
+async function mergeVaccinations(db: FarmDb, server: PullResponse['vaccinations']) {
+  const pending = new Map(
+    (await db.vaccinations.where('confirm_status').anyOf('pending', 'rejected').toArray()).map(
+      (v) => [v.id, v],
+    ),
+  )
+  await db.vaccinations.clear()
+  for (const item of server) {
+    const local = pending.get(item.id)
+    if (local && item.status !== 'DONE') {
+      // Keep the worker's confirmation until the server has it.
+      const { confirm_status, confirmed_at, confirm_note, errors } = local
+      await db.vaccinations.put({ ...item, confirm_status, confirmed_at, confirm_note, errors })
+    } else {
+      await db.vaccinations.put(item)
+    }
+  }
+}
+
 /** Get everything that changed on the server since the last pull. */
 export async function pull(db: FarmDb): Promise<void> {
   let cursor = await getMeta(db, 'cursor', 0)
   for (;;) {
     const page = await api<PullResponse>(`/sync/pull?since=${cursor}`)
-    const tables = [db.records, db.outbox, db.houses, db.conflicts, db.meta, db.observations]
+    const tables = [
+      db.records, db.outbox, db.houses, db.conflicts, db.meta, db.observations, db.vaccinations,
+    ]
     await db.transaction('rw', tables, async () => {
       await mergeRecords(db, page.records)
       await mergeObservations(db, page.observations ?? [])
+      await mergeVaccinations(db, page.vaccinations ?? [])
       await db.houses.clear()
       await db.houses.bulkPut(page.houses)
       await applyConflicts(db, page.conflicts)
@@ -292,6 +339,7 @@ export function syncNow(db: FarmDb): Promise<void> {
     task = (async () => {
       await pushOutbox(db)
       await pushObservations(db)
+      await pushVaccinations(db)
       await pull(db)
       await uploadPhotos(db) // after pull, so records just accepted count as synced
     })().finally(() => running.delete(db))

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -78,7 +78,11 @@ describe('HealthForm', () => {
     await user.click(screen.getByLabelText('Ngorok atau sesak napas'))
     await user.type(screen.getByRole('textbox', { name: /^Perkiraan ayam/ }), '15')
     const file = new File(['jpeg'], 'ayam.jpg', { type: 'image/jpeg' })
-    for (let i = 0; i < 3; i++) await user.upload(screen.getByLabelText('Ambil foto ayam'), file)
+    for (let i = 0; i < 3; i++) {
+      // The button reads "Memproses foto…" for a moment after each photo.
+      await user.upload(await screen.findByLabelText('Ambil foto ayam'), file)
+    }
+    await waitFor(() => expect(screen.getAllByText('Belum disimpan')).toHaveLength(3))
     // After 3 photos the camera button disappears.
     expect(screen.queryByLabelText('Ambil foto ayam')).not.toBeInTheDocument()
 

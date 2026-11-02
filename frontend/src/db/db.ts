@@ -105,6 +105,24 @@ export interface LocalObservation {
   vet_advice?: string
 }
 
+/** A scheduled vaccination as the phone knows it, plus the worker's own confirmation. */
+export interface LocalVaccination {
+  id: string // schedule id from the server
+  house_id: string
+  house_name: string
+  scheduled_date: string
+  vaccine_name: string
+  method: string
+  notes: string
+  status: 'SCHEDULED' | 'OVERDUE' | 'DONE'
+  done_by_name: string | null
+  // Set when the worker taps Konfirmasi on this phone.
+  confirm_status?: 'pending' | 'synced' | 'rejected'
+  confirmed_at?: string
+  confirm_note?: string
+  errors?: Record<string, string>
+}
+
 interface Meta {
   key: string
   value: unknown
@@ -118,6 +136,7 @@ export type FarmDb = Dexie & {
   meta: EntityTable<Meta, 'key'>
   photos: EntityTable<LocalPhoto, 'id'>
   observations: EntityTable<LocalObservation, 'id'>
+  vaccinations: EntityTable<LocalVaccination, 'id'>
 }
 
 function createDb(name: string): FarmDb {
@@ -136,6 +155,10 @@ function createDb(name: string): FarmDb {
   // Version 3: health observations (UC14).
   db.version(3).stores({
     observations: 'id, sync_status, observed_at',
+  })
+  // Version 4: vaccinations to confirm (ADR 0003).
+  db.version(4).stores({
+    vaccinations: 'id, scheduled_date, confirm_status',
   })
   return db
 }

@@ -4,6 +4,7 @@ import type { LocalRecord } from '../../db/db'
 import { addDays, farmDate } from '../../lib/farmDate'
 import { formatDate, formatNumber } from '../../lib/format'
 import { useWorker } from '../../sync/WorkerContext'
+import TodayPanel from './TodayPanel'
 
 const STATUS: Record<LocalRecord['sync_status'], { text: string; badge: string }> = {
   pending: { text: 'Menunggu dikirim', badge: 'warn' },
@@ -53,6 +54,8 @@ export default function WorkerHome() {
           </Link>
         </div>
       )}
+
+      <TodayPanel />
 
       <h1>Catat data harian</h1>
       <div className="segmented" role="group" aria-label="Pilih tanggal">

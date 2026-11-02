@@ -226,6 +226,8 @@ class PullResponse(BaseModel):
     conflicts: list[ConflictOut]
     # The worker's own recent health observations, so the phone can show their status.
     observations: list["ObservationOut"]
+    # Vaccinations from a week ago until tomorrow, for the "Hari ini" panel.
+    vaccinations: list["VaccinationOut"]
     server_today: date
     eggs_per_tray: int
 
@@ -357,3 +359,15 @@ class VaccinationOut(ORMModel):
     done_at: datetime | None
     done_by_name: str | None
     done_note: str
+
+
+class VaccinationConfirmation(BaseModel):
+    """A worker's "done" for a scheduled vaccination, made on the phone (maybe offline)."""
+
+    schedule_id: uuid.UUID
+    confirmed_at: datetime
+    note: str = Field(default="", max_length=500)
+
+
+class VaccinationConfirmPush(BaseModel):
+    confirmations: list[dict] = Field(max_length=100)
