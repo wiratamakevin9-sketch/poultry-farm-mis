@@ -5,29 +5,13 @@ from datetime import UTC, date, datetime
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import func, select
 
+from app.birds import start_of_day_birds
 from app.deps import DbSession, OwnerUser
-from app.models import ChickenHouse, DailyRecord, Flock, Photo, PhotoKind, User
+from app.models import ChickenHouse, DailyRecord, Photo, PhotoKind, User
 from app.records import lock_record_writes, next_change_seq, record_out
 from app.schemas import OwnerRecordOut
 
 router = APIRouter(prefix="/api/records", tags=["records"])
-
-
-def _start_of_day_birds(db: DbSession, flock_ids: set[uuid.UUID]) -> dict[uuid.UUID, int]:
-    """Live birds at the start of each record's day, keyed by record id."""
-    result: dict[uuid.UUID, int] = {}
-    for flock_id in flock_ids:
-        flock = db.get(Flock, flock_id)
-        alive = flock.initial_bird_count
-        records = db.scalars(
-            select(DailyRecord)
-            .where(DailyRecord.flock_id == flock_id, DailyRecord.deleted_at.is_(None))
-            .order_by(DailyRecord.record_date)
-        )
-        for record in records:
-            result[record.id] = alive
-            alive -= record.dead + record.culled
-    return result
 
 
 @router.get("")
@@ -47,7 +31,7 @@ def list_records(
         query = query.where(DailyRecord.record_date <= date_to)
     records = list(db.scalars(query.order_by(DailyRecord.record_date.desc())))
 
-    birds = _start_of_day_birds(db, {r.flock_id for r in records})
+    birds = start_of_day_birds(db, {r.flock_id for r in records})
     names: dict[uuid.UUID, str] = defaultdict(str)
     names.update({u.id: u.full_name for u in db.scalars(select(User))})
     houses = {h.id: h.name for h in db.scalars(select(ChickenHouse))}

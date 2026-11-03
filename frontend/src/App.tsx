@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { SessionUser } from './auth/storage'
 import { useSession } from './auth/useSession'
@@ -14,6 +15,9 @@ import SchedulePage from './pages/owner/SchedulePage'
 import StockPage from './pages/owner/StockPage'
 import UsersPage from './pages/owner/UsersPage'
 import { useNewHealthCount } from './pages/owner/useNewHealthCount'
+
+// Charts (Recharts) are only for the owner; workers' phones never load this chunk.
+const DashboardPage = lazy(() => import('./pages/owner/DashboardPage'))
 import WorkerApp from './pages/worker/WorkerApp'
 
 
@@ -29,6 +33,7 @@ export default function App() {
 function OwnerApp({ user }: { user: SessionUser }) {
   const newHealth = useNewHealthCount()
   const links = [
+    { to: '/pemilik/dashboard', label: 'Dashboard' },
     { to: '/pemilik/catatan', label: 'Catatan' },
     {
       to: '/pemilik/kesehatan',
@@ -47,6 +52,14 @@ function OwnerApp({ user }: { user: SessionUser }) {
   return (
     <Layout user={user} links={links}>
       <Routes>
+        <Route
+          path="/pemilik/dashboard"
+          element={
+            <Suspense fallback={<p className="muted">Memuat dashboard…</p>}>
+              <DashboardPage />
+            </Suspense>
+          }
+        />
         <Route path="/pemilik/catatan" element={<RecordsPage />} />
         <Route path="/pemilik/konflik" element={<OwnerConflictsPage />} />
         <Route path="/pemilik/kesehatan" element={<OwnerHealthPage />} />
@@ -57,7 +70,7 @@ function OwnerApp({ user }: { user: SessionUser }) {
         <Route path="/pemilik/lainnya" element={<MorePage />} />
         <Route path="/pemilik/kandang" element={<HousesPage />} />
         <Route path="/pemilik/pengguna" element={<UsersPage />} />
-        <Route path="*" element={<Navigate to="/pemilik/catatan" replace />} />
+        <Route path="*" element={<Navigate to="/pemilik/dashboard" replace />} />
       </Routes>
     </Layout>
   )

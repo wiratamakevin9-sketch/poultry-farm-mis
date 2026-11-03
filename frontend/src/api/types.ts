@@ -153,3 +153,37 @@ export interface FeedStock {
   days_left: number | null
   low: boolean
 }
+
+export interface WeeklyRow {
+  house_id: string | null
+  house_name: string
+  week_start: string
+  days: number
+  eggs: number
+  hen_days: number
+  feed_kg: number
+  dead: number
+  culled: number
+  birds_start: number
+  hdp: number | null
+  fcr: number | null
+  mortality_pct: number | null
+  feed_per_bird_g: number | null
+}
+
+export interface WeeklyReport {
+  weeks: string[]
+  rows: WeeklyRow[]
+  farm: WeeklyRow[]
+  egg_weight_g: number
+}
+
+export interface DashboardAlerts {
+  feed_low: boolean
+  feed_days_left: number | null
+  withheld_eggs: number
+  overdue_vaccinations: number
+  vaccinations_today: number
+  new_health_reports: number
+  open_conflicts: number
+}

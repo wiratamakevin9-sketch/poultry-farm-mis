@@ -519,3 +519,40 @@ class FeedPurchaseIn(BaseModel):
 class FeedCountIn(BaseModel):
     counted_kg: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
     reason: str = Field(default="", max_length=500)
+
+
+# ---------- reports (dashboard) ----------
+
+
+class WeeklyRow(BaseModel):
+    house_id: uuid.UUID | None  # None for the whole farm
+    house_name: str
+    week_start: date
+    days: int
+    eggs: int
+    hen_days: int
+    feed_kg: float
+    dead: int
+    culled: int
+    birds_start: int
+    hdp: float | None
+    fcr: float | None
+    mortality_pct: float | None
+    feed_per_bird_g: float | None
+
+
+class WeeklyReport(BaseModel):
+    weeks: list[date]
+    rows: list[WeeklyRow]
+    farm: list[WeeklyRow]
+    egg_weight_g: int
+
+
+class DashboardAlerts(BaseModel):
+    feed_low: bool
+    feed_days_left: float | None
+    withheld_eggs: int
+    overdue_vaccinations: int
+    vaccinations_today: int
+    new_health_reports: int
+    open_conflicts: int

@@ -26,3 +26,20 @@ def live_birds(
     if exclude_record_id is not None:
         query = query.where(DailyRecord.id != exclude_record_id)
     return flock.initial_bird_count - int(db.scalar(query))
+
+
+def start_of_day_birds(db: Session, flock_ids: set[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Live birds at the start of each record's day, keyed by record id."""
+    result: dict[uuid.UUID, int] = {}
+    for flock_id in flock_ids:
+        flock = db.get(Flock, flock_id)
+        alive = flock.initial_bird_count
+        records = db.scalars(
+            select(DailyRecord)
+            .where(DailyRecord.flock_id == flock_id, DailyRecord.deleted_at.is_(None))
+            .order_by(DailyRecord.record_date)
+        )
+        for record in records:
+            result[record.id] = alive
+            alive -= record.dead + record.culled
+    return result
