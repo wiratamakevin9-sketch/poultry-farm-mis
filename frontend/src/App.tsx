@@ -9,6 +9,7 @@ import OwnerHealthDetail from './pages/owner/OwnerHealthDetail'
 import OwnerHealthPage from './pages/owner/OwnerHealthPage'
 import OwnerConflictsPage from './pages/owner/OwnerConflictsPage'
 import RecordsPage from './pages/owner/RecordsPage'
+import SalesPage from './pages/owner/SalesPage'
 import SchedulePage from './pages/owner/SchedulePage'
 import StockPage from './pages/owner/StockPage'
 import UsersPage from './pages/owner/UsersPage'
@@ -39,6 +40,7 @@ function OwnerApp({ user }: { user: SessionUser }) {
       ),
     },
     { to: '/pemilik/jadwal', label: 'Jadwal' },
+    { to: '/pemilik/penjualan', label: 'Penjualan' },
     { to: '/pemilik/stok', label: 'Stok' },
     { to: '/pemilik/lainnya', label: 'Lainnya' },
   ]
@@ -50,6 +52,7 @@ function OwnerApp({ user }: { user: SessionUser }) {
         <Route path="/pemilik/kesehatan" element={<OwnerHealthPage />} />
         <Route path="/pemilik/kesehatan/:id" element={<OwnerHealthDetail />} />
         <Route path="/pemilik/jadwal" element={<SchedulePage />} />
+        <Route path="/pemilik/penjualan" element={<SalesPage />} />
         <Route path="/pemilik/stok" element={<StockPage />} />
         <Route path="/pemilik/lainnya" element={<MorePage />} />
         <Route path="/pemilik/kandang" element={<HousesPage />} />

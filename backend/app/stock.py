@@ -12,7 +12,14 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import DailyRecord, EggDisposal, EggGrade, StockAdjustment, StockItem
+from app.models import (
+    DailyRecord,
+    EggDisposal,
+    EggGrade,
+    EggSale,
+    StockAdjustment,
+    StockItem,
+)
 from app.withdrawal import is_withheld, withheld_days
 
 GRADE_ITEMS = {
@@ -47,7 +54,7 @@ def egg_production(db: Session) -> dict[EggGrade, int]:
 
 
 def eggs_out(db: Session) -> dict[EggGrade, int]:
-    """Eggs that left the stock: disposals (and sales, once recorded)."""
+    """Eggs that left the stock: sales and disposals."""
     out: dict[EggGrade, int] = defaultdict(int)
     for grade, quantity in db.execute(
         select(EggDisposal.grade, func.sum(EggDisposal.quantity)).group_by(EggDisposal.grade)
@@ -59,7 +66,8 @@ def eggs_out(db: Session) -> dict[EggGrade, int]:
 
 
 def sold_by_grade(db: Session) -> dict[EggGrade, int]:
-    return {}  # egg sales are added in the next step
+    rows = db.execute(select(EggSale.grade, func.sum(EggSale.quantity)).group_by(EggSale.grade))
+    return {grade: int(quantity) for grade, quantity in rows}
 
 
 def adjustments(db: Session, item: StockItem) -> Decimal:

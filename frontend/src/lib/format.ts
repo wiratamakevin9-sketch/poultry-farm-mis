@@ -29,3 +29,14 @@ const dateTimeFormat = new Intl.DateTimeFormat('id-ID', {
 export function formatDateTime(iso: string): string {
   return dateTimeFormat.format(new Date(iso))
 }
+
+const rupiah = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  maximumFractionDigits: 0,
+})
+
+/** "Rp 1.705.000" */
+export function formatRupiah(value: number): string {
+  return rupiah.format(value)
+}

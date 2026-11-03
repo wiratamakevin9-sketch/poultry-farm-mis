@@ -10,6 +10,7 @@ from app.routers import (
     houses,
     photos,
     records,
+    sales,
     stock,
     sync,
     treatments,
@@ -39,6 +40,7 @@ app.include_router(health.router)
 app.include_router(vaccinations.router)
 app.include_router(treatments.router)
 app.include_router(stock.router)
+app.include_router(sales.router)
 
 
 @app.get("/api/health")

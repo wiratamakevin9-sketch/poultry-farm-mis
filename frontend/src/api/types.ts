@@ -124,3 +124,25 @@ export interface StockMovement {
   note: string
   by: string
 }
+
+export interface Buyer {
+  id: string
+  name: string
+  phone: string
+  notes: string
+  is_active: boolean
+}
+
+export interface Sale {
+  id: string
+  sale_date: string
+  buyer_id: string
+  buyer_name: string
+  grade: 'GOOD' | 'CRACKED' | 'DIRTY'
+  quantity: number
+  quantity_estimated: boolean
+  weight_kg: string
+  price_per_kg: string
+  total: string
+  notes: string
+}

@@ -450,3 +450,52 @@ class StockMovement(BaseModel):
     quantity: Decimal  # negative leaves the stock
     note: str
     by: str
+
+
+# ---------- buyers and sales (ADR 0003) ----------
+
+
+class BuyerIn(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(default="", max_length=30)
+    notes: str = Field(default="", max_length=500)
+
+
+class BuyerUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    phone: str | None = Field(default=None, max_length=30)
+    notes: str | None = Field(default=None, max_length=500)
+    is_active: bool | None = None
+
+
+class BuyerOut(ORMModel):
+    id: uuid.UUID
+    name: str
+    phone: str
+    notes: str
+    is_active: bool
+
+
+class SaleIn(BaseModel):
+    sale_date: date
+    buyer_id: uuid.UUID
+    grade: Literal[EggGrade.GOOD, EggGrade.CRACKED, EggGrade.DIRTY]
+    weight_kg: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    price_per_kg: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
+    # Optional: estimated from the weight when left out.
+    quantity: int | None = Field(default=None, gt=0)
+    notes: str = Field(default="", max_length=500)
+
+
+class SaleOut(ORMModel):
+    id: uuid.UUID
+    sale_date: date
+    buyer_id: uuid.UUID
+    buyer_name: str
+    grade: EggGrade
+    quantity: int
+    quantity_estimated: bool
+    weight_kg: Decimal
+    price_per_kg: Decimal
+    total: Decimal
+    notes: str

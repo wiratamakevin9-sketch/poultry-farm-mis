@@ -369,3 +369,39 @@ class StockAdjustment(Base):
     reason: Mapped[str] = mapped_column(Text, default="")
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Buyer(TimestampMixin, Base):
+    __tablename__ = "buyers"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    phone: Mapped[str] = mapped_column(String(30), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    is_active: Mapped[bool] = mapped_column(default=True)
+
+
+class EggSale(Base):
+    """Eggs sold in kg at a price per kg (ADR 0003). Withheld eggs are never sold."""
+
+    __tablename__ = "egg_sales"
+    __table_args__ = (
+        CheckConstraint("grade IN ('GOOD', 'CRACKED', 'DIRTY')", name="sale_grade_sellable"),
+        CheckConstraint("quantity > 0", name="sale_quantity_positive"),
+        CheckConstraint("weight_kg > 0", name="sale_weight_positive"),
+        CheckConstraint("price_per_kg >= 0", name="sale_price_not_negative"),
+        Index("ix_egg_sales_date", "sale_date"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    sale_date: Mapped[date] = mapped_column(Date)
+    buyer_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("buyers.id"))
+    grade: Mapped[EggGrade] = mapped_column(_enum(EggGrade, "egg_grade"))
+    quantity: Mapped[int] = mapped_column(Integer)  # eggs, taken out of the stock
+    quantity_estimated: Mapped[bool] = mapped_column(default=False)  # from kg / egg weight
+    weight_kg: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    price_per_kg: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    total: Mapped[Decimal] = mapped_column(Numeric(14, 2))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

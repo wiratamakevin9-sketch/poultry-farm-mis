@@ -19,7 +19,7 @@ from app.db import SessionLocal, engine
 from app.main import app
 from app.seed import seed
 
-TABLES = "stock_adjustments, egg_disposals, treatments, vaccination_schedules, photos, health_observations, sync_conflicts, daily_records, flocks, chicken_houses, users"
+TABLES = "egg_sales, buyers, stock_adjustments, egg_disposals, treatments, vaccination_schedules, photos, health_observations, sync_conflicts, daily_records, flocks, chicken_houses, users"
 
 
 @pytest.fixture(scope="session", autouse=True)
