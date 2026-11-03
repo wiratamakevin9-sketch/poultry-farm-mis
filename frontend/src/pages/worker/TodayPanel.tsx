@@ -1,9 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import type { LocalVaccination } from '../../db/db'
+import { getMeta, type LocalVaccination } from '../../db/db'
 import { addDays, farmDate } from '../../lib/farmDate'
 import { formatDate } from '../../lib/format'
 import { VACCINE_METHODS, type VaccineMethod } from '../../lib/labels'
+import type { TodayTreatment } from '../../sync/engine'
 import { useWorker } from '../../sync/WorkerContext'
 
 function VaccinationItem({ item }: { item: LocalVaccination }) {
@@ -70,24 +71,46 @@ function VaccinationItem({ item }: { item: LocalVaccination }) {
   )
 }
 
-/** "Hari ini": vaccinations due today or missed, and tomorrow's for planning. */
+/** "Hari ini": medicine to give, vaccinations due today or missed, tomorrow's for planning. */
 export default function TodayPanel() {
   const { db } = useWorker()
   const today = farmDate()
   const tomorrow = addDays(today, 1)
   const items = useLiveQuery(() => db.vaccinations.orderBy('scheduled_date').toArray(), [db], [])
+  const medicines = useLiveQuery(
+    () => getMeta<TodayTreatment[]>(db, 'treatments_today', []),
+    [db],
+    [],
+  )
 
   const due = items.filter(
     (v) => (v.scheduled_date <= today && v.status !== 'DONE') || (v.scheduled_date === today && v.status === 'DONE'),
   )
   const upcoming = items.filter((v) => v.scheduled_date === tomorrow)
-  if (due.length === 0 && upcoming.length === 0) return null
+  if (due.length === 0 && upcoming.length === 0 && medicines.length === 0) return null
 
   return (
     <section className="card stack" aria-labelledby="today-title">
       <h2 id="today-title" style={{ margin: 0 }}>
         Hari ini
       </h2>
+      {medicines.length > 0 && (
+        <>
+          <strong>Pemberian obat</strong>
+          <ul className="item-list">
+            {medicines.map((t) => (
+              <li key={t.id} className="stack">
+                <strong>
+                  {t.house_name} · {t.medicine_name}
+                </strong>
+                <span className="muted">
+                  {t.dose ? `${t.dose} · ` : ''}sampai {formatDate(t.end_date)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       {due.length > 0 && (
         <>
           <strong>Vaksinasi</strong>

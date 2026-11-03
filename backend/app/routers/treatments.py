@@ -57,6 +57,17 @@ def _get(db: Session, treatment_id: uuid.UUID) -> Treatment:
     return treatment
 
 
+def treatments_today(db: Session) -> list[TreatmentOut]:
+    """Treatments whose medicine is being given today, for the workers' phones."""
+    today = farm_today()
+    items = db.scalars(
+        select(Treatment)
+        .where(Treatment.start_date <= today, Treatment.end_date >= today)
+        .order_by(Treatment.start_date)
+    )
+    return [treatment_out(db, t) for t in items]
+
+
 @router.get("")
 def list_treatments(
     db: DbSession, _: OwnerUser, house_id: uuid.UUID | None = None, recent_days: int = 60

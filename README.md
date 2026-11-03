@@ -21,8 +21,22 @@ Iteration 2, part 1 adds two use cases (ADR 0002):
   shares it with the veterinarian as a PDF (WhatsApp or email), records the vet's
   advice and closes it; the worker sees the status and the advice.
 
-Reports: [`docs/iteration-1-report.md`](docs/iteration-1-report.md) and
-[`docs/iteration-2-part-1-report.md`](docs/iteration-2-part-1-report.md).
+Iteration 2, part 2 adds the farm modules (ADR 0003):
+
+- **Vaccinations:** the owner schedules them; the worker sees "Hari ini" on the phone
+  and confirms, offline.
+- **Treatments:** the owner records medicine and withdrawal days; eggs of a treated
+  house are **withheld** and cannot be sold until the withdrawal period ends.
+- **Egg stock and sales:** stock per grade (good, cracked, dirty, withheld) computed from
+  daily records, sales, disposals and physical counts; sales per buyer in kg at a price
+  per kg.
+- **Feed stock:** purchases in, daily feed out, warning when it lasts under 7 days.
+- **Dashboard:** weekly HDP, FCR and mortality per house (charts and table), what needs
+  attention, CSV and PDF export.
+
+Reports: [`docs/iteration-1-report.md`](docs/iteration-1-report.md),
+[`docs/iteration-2-part-1-report.md`](docs/iteration-2-part-1-report.md) and
+[`docs/iteration-2-report.md`](docs/iteration-2-report.md).
 
 ## Tech stack
 
@@ -97,7 +111,8 @@ Backend settings come from environment variables (or `backend/.env`):
 `DATABASE_URL`, `JWT_SECRET` (set a long random value outside development),
 `ACCESS_TOKEN_MINUTES` (default 30), `REFRESH_TOKEN_DAYS` (default 30),
 `FARM_TIMEZONE` (default `Asia/Makassar`), `PHOTO_DIR` (default `data/photos`),
-`MAX_PHOTO_BYTES` (default 3 MB), `EGGS_PER_TRAY` (default 30).
+`MAX_PHOTO_BYTES` (default 3 MB), `EGGS_PER_TRAY` (default 30), `EGG_WEIGHT_G` (average
+egg weight for kg estimates and FCR, default 62), `FEED_LOW_DAYS` (default 7).
 
 ## Run the tests
 
@@ -163,6 +178,23 @@ opens the share sheet (WhatsApp, Gmail); on a computer it downloads the PDF, and
 WhatsApp Web / email links help you send it. Then mark how it was sent, write the
 vet's advice and press **Tandai selesai**. The worker's list shows the status and advice.
 
+### Farm modules (Iteration 2)
+
+As `pemilik` the app opens on the **Dashboard**. Try, in this order:
+
+1. **Jadwal → Tambah jadwal vaksinasi** for today. As `pekerja1`, the home page shows
+   **Hari ini** with a **Konfirmasi** button (works offline); back as the owner, the
+   schedule shows who confirmed it.
+2. **Jadwal → Catat pengobatan** for a house with a few withdrawal days. That house shows
+   **Masa henti obat s/d …** on the worker's phone, and its eggs from those days count as
+   **ditahan** in **Stok**.
+3. **Penjualan:** add a buyer, then sell good eggs in kg. The form only offers good,
+   cracked and dirty eggs with their stock, estimates the number of eggs from the weight
+   and shows the total. **Stok** goes down accordingly.
+4. **Stok:** record the disposal of withheld eggs, a physical count, and a feed purchase.
+5. **Dashboard:** what needs attention, this week against last week, charts per house,
+   **Lihat tabel angka**, **Ekspor CSV** / **Ekspor PDF**.
+
 To install the app, open the Chrome menu → **Install app** (desktop) or **Add to Home
 screen** (Android). Installing on a real phone needs the app to be served over HTTPS,
 which is planned for deployment in a later iteration.
@@ -192,5 +224,8 @@ Key places in the code:
 - **Feed per bird** = feed kg × 1000 ÷ live birds (grams)
 - **Live birds** = flock's initial count − all dead and culled birds before that day
 
-FCR and mortality rate are defined in `CLAUDE.md` and come with the dashboard in a later
-iteration.
+- **FCR** = kg feed ÷ kg eggs, with the average egg weight (62 g by default)
+- **Mortality** = dead birds ÷ birds at the start of the week × 100
+
+The dashboard and its exports use weeks starting on Monday (farm time, WITA), and count
+all eggs laid (good, cracked, dirty and rejected) for HDP and FCR.

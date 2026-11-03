@@ -32,6 +32,16 @@ interface PullResponse {
   eggs_per_tray: number
   observations: ServerObservation[]
   vaccinations: Omit<LocalVaccination, 'confirm_status' | 'confirmed_at' | 'confirm_note'>[]
+  treatments_today: TodayTreatment[]
+}
+
+/** Medicine being given today; shown in the worker's "Hari ini" panel. */
+export interface TodayTreatment {
+  id: string
+  house_name: string
+  medicine_name: string
+  dose: string
+  end_date: string
 }
 
 interface ServerObservation {
@@ -275,6 +285,7 @@ export async function pull(db: FarmDb): Promise<void> {
       await setMeta(db, 'cursor', page.cursor)
       await setMeta(db, 'server_today', page.server_today)
       await setMeta(db, 'eggs_per_tray', page.eggs_per_tray)
+      await setMeta(db, 'treatments_today', page.treatments_today ?? [])
     })
     cursor = page.cursor
     if (!page.has_more) break

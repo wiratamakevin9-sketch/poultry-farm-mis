@@ -231,6 +231,8 @@ class PullResponse(BaseModel):
     observations: list["ObservationOut"]
     # Vaccinations from a week ago until tomorrow, for the "Hari ini" panel.
     vaccinations: list["VaccinationOut"]
+    # Medicine to give today (treatments in their giving phase), for the same panel.
+    treatments_today: list["TreatmentOut"]
     server_today: date
     eggs_per_tray: int
 

@@ -63,6 +63,17 @@ describe('TodayPanel', () => {
     await waitFor(() => expect(run).toHaveBeenCalled())
   })
 
+  it("shows today's medicine", async () => {
+    await db.meta.put({
+      key: 'treatments_today',
+      value: [{ id: 't1', house_name: 'Kandang 2', medicine_name: 'Antibiotik X',
+                dose: '1 g per liter air minum', end_date: '2026-11-04' }],
+    })
+    renderPanel()
+    expect(await screen.findByText('Kandang 2 · Antibiotik X')).toBeInTheDocument()
+    expect(screen.getByText('1 g per liter air minum · sampai 4 Nov 2026')).toBeInTheDocument()
+  })
+
   it('shows nothing when there is nothing to do', () => {
     const { container } = renderPanel()
     expect(container).toBeEmptyDOMElement()

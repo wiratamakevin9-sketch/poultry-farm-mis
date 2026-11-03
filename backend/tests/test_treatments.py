@@ -99,3 +99,15 @@ def test_list_hides_long_finished_treatments(client: TestClient, owner_headers: 
 def test_workers_cannot_manage_treatments(client: TestClient, worker_headers: dict) -> None:
     assert client.get("/api/treatments", headers=worker_headers).status_code == 403
     assert treat(client, worker_headers).status_code == 403
+
+
+def test_workers_get_todays_medicine_in_pull(
+    client: TestClient, owner_headers: dict, worker_headers: dict
+) -> None:
+    treat(client, owner_headers, start_date=day(-1), end_date=day(1))  # giving today
+    treat(client, owner_headers, start_date=day(-5), end_date=day(-1))  # only withdrawal now
+    treat(client, owner_headers, start_date=day(2), end_date=day(4))  # not started
+    pulled = client.get("/api/sync/pull", headers=worker_headers).json()["treatments_today"]
+    assert [(t["medicine_name"], t["dose"]) for t in pulled] == [
+        ("Antibiotik X", "1 g per liter air minum")
+    ]
