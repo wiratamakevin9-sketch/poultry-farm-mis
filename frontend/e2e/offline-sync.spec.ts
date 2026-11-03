@@ -60,7 +60,14 @@ test('records entered offline reach the server exactly once', async ({ page, con
       open.onerror = () => reject(open.error)
       open.onsuccess = () => {
         const all = open.result.transaction('records').objectStore('records').getAll()
-        all.onsuccess = () => resolve(all.result.map((r: { id: string }) => r.id))
+        // Only what this phone made and has not sent; records pulled from the server
+        // (e.g. from other tests) are already synced.
+        all.onsuccess = () =>
+          resolve(
+            all.result
+              .filter((r: { sync_status: string }) => r.sync_status === 'pending')
+              .map((r: { id: string }) => r.id),
+          )
       }
     })
   })
@@ -89,8 +96,10 @@ test('records entered offline reach the server exactly once', async ({ page, con
   const records: { id: string; house_name: string; eggs_good: number; feed_kg: string }[] =
     await recordsResponse.json()
 
-  expect(records.map((r) => r.id).sort()).toEqual([...localIds].sort())
-  const byHouse = Object.fromEntries(records.map((r) => [r.house_name, r]))
+  // Other spec files use Kandang 3 and 4; this test owns Kandang 1 and 2 today.
+  const mine = records.filter((r) => ['Kandang 1', 'Kandang 2'].includes(r.house_name))
+  expect(mine.map((r) => r.id).sort()).toEqual([...localIds].sort())
+  const byHouse = Object.fromEntries(mine.map((r) => [r.house_name, r]))
   expect(Object.keys(byHouse).sort()).toEqual(['Kandang 1', 'Kandang 2'])
   expect(byHouse['Kandang 1'].eggs_good).toBe(4000)
   expect(byHouse['Kandang 2'].eggs_good).toBe(3900)
