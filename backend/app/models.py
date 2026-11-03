@@ -405,3 +405,19 @@ class EggSale(Base):
     notes: Mapped[str] = mapped_column(Text, default="")
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FeedPurchase(Base):
+    """Feed bought (in). Feed used comes from the daily records (out)."""
+
+    __tablename__ = "feed_purchases"
+    __table_args__ = (CheckConstraint("quantity_kg > 0", name="feed_quantity_positive"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    purchase_date: Mapped[date] = mapped_column(Date)
+    quantity_kg: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    supplier: Mapped[str] = mapped_column(String(100), default="")
+    price_total: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

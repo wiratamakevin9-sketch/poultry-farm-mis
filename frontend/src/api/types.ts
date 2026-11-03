@@ -146,3 +146,10 @@ export interface Sale {
   total: string
   notes: string
 }
+
+export interface FeedStock {
+  stock_kg: string
+  per_day_kg: string
+  days_left: number | null
+  low: boolean
+}

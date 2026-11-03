@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     eggs_per_tray: int = 30
     # Average egg weight, used for kg estimates and FCR (CLAUDE.md).
     egg_weight_g: int = 62
+    # Warn when the feed stock lasts fewer days than this at the recent rate.
+    feed_low_days: int = 7
 
 
 settings = Settings()

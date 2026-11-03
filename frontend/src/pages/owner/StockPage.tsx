@@ -5,6 +5,7 @@ import NumberField from '../../components/NumberField'
 import { farmDate } from '../../lib/farmDate'
 import { formatDate, formatNumber } from '../../lib/format'
 import { EGG_GRADES, STOCK_ITEMS, type EggGrade } from '../../lib/labels'
+import FeedSection from './FeedSection'
 
 const KIND = { DISPOSAL: 'Dibuang', COUNT: 'Hitung fisik', PURCHASE: 'Pembelian' } as const
 
@@ -140,16 +141,22 @@ export default function StockPage() {
         <button type="submit" disabled={!/^\d+$/.test(count.counted)}>Simpan hitung fisik</button>
       </form>
 
+      <FeedSection onChange={load} />
+
       <section className="card">
         <h2>Riwayat 30 hari</h2>
         {moves.length === 0 ? (
-          <p className="muted">Belum ada pembuangan atau hitung fisik.</p>
+          <p className="muted">Belum ada pembuangan, pembelian atau hitung fisik.</p>
         ) : (
           <ul className="item-list">
             {moves.map((m, i) => (
               <li key={i}>
                 <strong>{formatDate(m.date)}</strong> · {KIND[m.kind]} · {STOCK_ITEMS[m.item]}{' '}
-                <strong>{Number(m.quantity) > 0 ? '+' : ''}{formatNumber(Number(m.quantity))}</strong>
+                <strong>
+                  {Number(m.quantity) > 0 ? '+' : ''}
+                  {formatNumber(Number(m.quantity), m.item === 'FEED' ? 1 : 0)}
+                  {m.item === 'FEED' ? ' kg' : ' butir'}
+                </strong>
                 <div className="muted">
                   {m.by}
                   {m.note && ` · ${m.note}`}

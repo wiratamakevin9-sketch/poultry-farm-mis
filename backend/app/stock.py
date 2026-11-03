@@ -7,6 +7,7 @@ Nothing is stored as a running total, so every number can be explained.
 """
 
 from collections import defaultdict
+from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -17,6 +18,7 @@ from app.models import (
     EggDisposal,
     EggGrade,
     EggSale,
+    FeedPurchase,
     StockAdjustment,
     StockItem,
 )
@@ -86,3 +88,30 @@ def egg_stock(db: Session) -> dict[EggGrade, int]:
         grade: produced[grade] - out[grade] + int(adjustments(db, GRADE_ITEMS[grade]))
         for grade in EggGrade
     }
+
+
+# ---------- feed ----------
+
+FEED_RATE_DAYS = 7  # the recent rate is the average of the last 7 days
+
+
+def feed_stock_kg(db: Session) -> Decimal:
+    bought = db.scalar(select(func.coalesce(func.sum(FeedPurchase.quantity_kg), 0)))
+    used = db.scalar(
+        select(func.coalesce(func.sum(DailyRecord.feed_kg), 0)).where(
+            DailyRecord.deleted_at.is_(None)
+        )
+    )
+    return Decimal(bought) - Decimal(used) + adjustments(db, StockItem.FEED)
+
+
+def recent_feed_per_day(db: Session, today: date) -> Decimal:
+    first = today - timedelta(days=FEED_RATE_DAYS - 1)
+    used = db.scalar(
+        select(func.coalesce(func.sum(DailyRecord.feed_kg), 0)).where(
+            DailyRecord.deleted_at.is_(None),
+            DailyRecord.record_date >= first,
+            DailyRecord.record_date <= today,
+        )
+    )
+    return Decimal(used) / FEED_RATE_DAYS

@@ -445,7 +445,7 @@ class EggCountIn(BaseModel):
 
 class StockMovement(BaseModel):
     date: date
-    kind: Literal["DISPOSAL", "COUNT"]
+    kind: Literal["DISPOSAL", "COUNT", "PURCHASE"]
     item: str
     quantity: Decimal  # negative leaves the stock
     note: str
@@ -499,3 +499,23 @@ class SaleOut(ORMModel):
     price_per_kg: Decimal
     total: Decimal
     notes: str
+
+
+class FeedStockOut(BaseModel):
+    stock_kg: Decimal
+    per_day_kg: Decimal  # average of the last 7 days
+    days_left: float | None  # None when no feed was used recently
+    low: bool
+
+
+class FeedPurchaseIn(BaseModel):
+    purchase_date: date
+    quantity_kg: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    supplier: str = Field(default="", max_length=100)
+    price_total: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)
+    notes: str = Field(default="", max_length=500)
+
+
+class FeedCountIn(BaseModel):
+    counted_kg: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
+    reason: str = Field(default="", max_length=500)
