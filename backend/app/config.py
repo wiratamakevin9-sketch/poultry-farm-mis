@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     max_photo_side: int = 1600
     # Eggs on a full tray; the phone uses it for "full trays x eggs + remainder".
     eggs_per_tray: int = 30
+    # Average egg weight, used for kg estimates and FCR (CLAUDE.md).
+    egg_weight_g: int = 62
 
 
 settings = Settings()

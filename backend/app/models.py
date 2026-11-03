@@ -73,6 +73,21 @@ class VaccineMethod(enum.StrEnum):
     OTHER = "OTHER"
 
 
+class EggGrade(enum.StrEnum):
+    GOOD = "GOOD"
+    CRACKED = "CRACKED"
+    DIRTY = "DIRTY"
+    WITHHELD = "WITHHELD"  # laid during a withdrawal period; never sold (ADR 0003)
+
+
+class StockItem(enum.StrEnum):
+    EGG_GOOD = "EGG_GOOD"
+    EGG_CRACKED = "EGG_CRACKED"
+    EGG_DIRTY = "EGG_DIRTY"
+    EGG_WITHHELD = "EGG_WITHHELD"
+    FEED = "FEED"  # kg
+
+
 class ConflictResolution(enum.StrEnum):
     KEEP_SERVER = "KEEP_SERVER"
     TAKE_DEVICE = "TAKE_DEVICE"
@@ -323,3 +338,34 @@ class Treatment(TimestampMixin, Base):
     withdrawal_days: Mapped[int] = mapped_column(Integer)
     notes: Mapped[str] = mapped_column(Text, default="")
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+
+
+class EggDisposal(Base):
+    """Eggs thrown away, e.g. withheld eggs after a treatment."""
+
+    __tablename__ = "egg_disposals"
+    __table_args__ = (CheckConstraint("quantity > 0", name="disposal_quantity_positive"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    disposal_date: Mapped[date] = mapped_column(Date)
+    grade: Mapped[EggGrade] = mapped_column(_enum(EggGrade, "egg_grade"))
+    quantity: Mapped[int] = mapped_column(Integer)  # eggs
+    reason: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class StockAdjustment(Base):
+    """A correction after counting the real stock (stock opname)."""
+
+    __tablename__ = "stock_adjustments"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    adjust_date: Mapped[date] = mapped_column(Date)
+    item: Mapped[StockItem] = mapped_column(_enum(StockItem, "stock_item"))
+    # Eggs for egg items, kg for feed. Positive adds to the stock.
+    delta: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    counted: Mapped[Decimal] = mapped_column(Numeric(12, 2))  # what the owner counted
+    reason: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -62,7 +62,8 @@ describe('HealthForm', () => {
   it('limits affected birds to live birds', async () => {
     const user = userEvent.setup()
     renderForm()
-    await user.selectOptions(await screen.findByLabelText('Kandang'), 'h1')
+    await screen.findByRole('option', { name: 'Kandang 1' }) // houses load from IndexedDB
+    await user.selectOptions(screen.getByLabelText('Kandang'), 'h1')
     await user.type(screen.getByRole('textbox', { name: /^Perkiraan ayam/ }), '5000')
     await user.click(screen.getByRole('button', { name: 'Simpan laporan' }))
     expect(
@@ -73,7 +74,8 @@ describe('HealthForm', () => {
   it('saves the report and up to 3 photos on the phone', async () => {
     const user = userEvent.setup()
     renderForm()
-    await user.selectOptions(await screen.findByLabelText('Kandang'), 'h1')
+    await screen.findByRole('option', { name: 'Kandang 1' }) // houses load from IndexedDB
+    await user.selectOptions(screen.getByLabelText('Kandang'), 'h1')
     await user.click(screen.getByLabelText('Lesu'))
     await user.click(screen.getByLabelText('Ngorok atau sesak napas'))
     await user.type(screen.getByRole('textbox', { name: /^Perkiraan ayam/ }), '15')

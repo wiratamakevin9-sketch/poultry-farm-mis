@@ -110,3 +110,17 @@ export interface Treatment {
   sellable_from: string
   phase: 'PLANNED' | 'GIVING' | 'WITHDRAWAL' | 'FINISHED'
 }
+
+export interface EggStock {
+  lines: { grade: import('../lib/labels').EggGrade; eggs: number; kg: number; sellable: boolean }[]
+  egg_weight_g: number
+}
+
+export interface StockMovement {
+  date: string
+  kind: 'DISPOSAL' | 'COUNT' | 'PURCHASE'
+  item: string
+  quantity: string
+  note: string
+  by: string
+}

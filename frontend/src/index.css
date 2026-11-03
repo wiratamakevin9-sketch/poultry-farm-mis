@@ -598,3 +598,30 @@ a.button.secondary {
   font-size: 0.8rem;
   font-weight: 700;
 }
+
+/* ---------- stock ---------- */
+
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.stock-card strong {
+  font-size: 1.3rem;
+  color: var(--color-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-card--held {
+  border-color: #fecaca;
+  background: var(--color-danger-bg);
+}

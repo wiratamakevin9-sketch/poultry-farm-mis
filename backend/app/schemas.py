@@ -9,6 +9,7 @@ from app.models import (
     ConflictReason,
     ConflictResolution,
     ConflictStatus,
+    EggGrade,
     ForwardChannel,
     ObservationStatus,
     PhotoKind,
@@ -410,3 +411,42 @@ class TreatmentOut(ORMModel):
     sellable_from: date
     # GIVING (medicine being given), WITHDRAWAL (eggs withheld), FINISHED, or PLANNED.
     phase: Literal["PLANNED", "GIVING", "WITHDRAWAL", "FINISHED"]
+
+
+# ---------- egg stock (ADR 0003) ----------
+
+
+class EggStockLine(BaseModel):
+    grade: EggGrade
+    eggs: int
+    kg: float  # estimated from the average egg weight
+    sellable: bool
+
+
+class EggStockOut(BaseModel):
+    lines: list[EggStockLine]
+    egg_weight_g: int
+
+
+class EggDisposalIn(BaseModel):
+    disposal_date: date
+    grade: EggGrade
+    quantity: int = Field(gt=0)
+    reason: str = Field(default="", max_length=500)
+
+
+class EggCountIn(BaseModel):
+    """The owner counted the real stock of one grade; the difference is recorded."""
+
+    grade: EggGrade
+    counted: int = Field(ge=0)
+    reason: str = Field(default="", max_length=500)
+
+
+class StockMovement(BaseModel):
+    date: date
+    kind: Literal["DISPOSAL", "COUNT"]
+    item: str
+    quantity: Decimal  # negative leaves the stock
+    note: str
+    by: str
