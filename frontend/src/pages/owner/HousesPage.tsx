@@ -164,6 +164,12 @@ export default function HousesPage() {
             </div>
           )}
 
+          {house.withdrawal_until && (
+            <div className="alert warning">
+              Masa henti obat: telur kandang ini tidak boleh dijual sampai{' '}
+              {formatDate(house.withdrawal_until)}.
+            </div>
+          )}
           {house.active_flock ? (
             <div className="muted">
               Flock aktif: <strong>{house.active_flock.breed}</strong>, masuk{' '}

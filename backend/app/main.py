@@ -11,6 +11,7 @@ from app.routers import (
     photos,
     records,
     sync,
+    treatments,
     users,
     vaccinations,
 )
@@ -35,6 +36,7 @@ app.include_router(conflicts.router)
 app.include_router(photos.router)
 app.include_router(health.router)
 app.include_router(vaccinations.router)
+app.include_router(treatments.router)
 
 
 @app.get("/api/health")

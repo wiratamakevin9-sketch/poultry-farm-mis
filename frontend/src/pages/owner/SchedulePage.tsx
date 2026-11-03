@@ -4,6 +4,7 @@ import type { House, Vaccination } from '../../api/types'
 import { addDays, farmDate } from '../../lib/farmDate'
 import { formatDate, formatDateTime } from '../../lib/format'
 import { VACCINE_METHODS, type VaccineMethod } from '../../lib/labels'
+import TreatmentsSection from './TreatmentsSection'
 
 const STATUS = {
   OVERDUE: { text: 'Terlewat', badge: 'bad' },
@@ -191,6 +192,8 @@ export default function SchedulePage() {
           )}
         </div>
       </form>
+
+      <TreatmentsSection houses={houses} />
     </>
   )
 }

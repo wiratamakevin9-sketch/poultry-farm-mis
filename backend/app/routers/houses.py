@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.birds import live_birds
 from app.deps import CurrentUser, DbSession, OwnerUser
+from app.farm_time import farm_today
 from app.models import ChickenHouse, Flock
 from app.schemas import FlockWithBirds, HouseCreate, HouseOut, HouseUpdate
+from app.withdrawal import withdrawal_until
 
 router = APIRouter(prefix="/api/houses", tags=["houses"])
 
@@ -34,6 +36,7 @@ def house_out(db: Session, house: ChickenHouse) -> HouseOut:
     flock = active_flock(db, house.id)
     if flock is not None:
         out.active_flock = flock_with_birds(db, flock)
+    out.withdrawal_until = withdrawal_until(db, house.id, farm_today())
     return out
 
 

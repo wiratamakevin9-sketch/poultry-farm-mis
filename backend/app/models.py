@@ -298,3 +298,28 @@ class VaccinationSchedule(TimestampMixin, Base):
     done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     done_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     done_note: Mapped[str] = mapped_column(Text, default="")
+
+
+class Treatment(TimestampMixin, Base):
+    """Medicine given to a house, recorded by the owner (ADR 0003).
+
+    Eggs laid from start_date to end_date + withdrawal_days are withheld and cannot be
+    sold; they are sellable again from end_date + withdrawal_days + 1.
+    """
+
+    __tablename__ = "treatments"
+    __table_args__ = (
+        CheckConstraint("end_date >= start_date", name="treatment_dates_in_order"),
+        CheckConstraint("withdrawal_days >= 0", name="withdrawal_not_negative"),
+        Index("ix_treatments_house_dates", "house_id", "start_date", "end_date"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    house_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chicken_houses.id"))
+    medicine_name: Mapped[str] = mapped_column(String(100))
+    dose: Mapped[str] = mapped_column(Text, default="")  # dose and how it is given
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date] = mapped_column(Date)
+    withdrawal_days: Mapped[int] = mapped_column(Integer)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))

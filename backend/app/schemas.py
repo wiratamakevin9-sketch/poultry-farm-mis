@@ -105,6 +105,8 @@ class HouseOut(ORMModel):
     capacity: int
     is_active: bool
     active_flock: FlockWithBirds | None = None
+    # Eggs laid today are withheld until this day (a treatment's withdrawal period).
+    withdrawal_until: date | None = None
 
 
 class FlockCreate(BaseModel):
@@ -371,3 +373,40 @@ class VaccinationConfirmation(BaseModel):
 
 class VaccinationConfirmPush(BaseModel):
     confirmations: list[dict] = Field(max_length=100)
+
+
+# ---------- treatments (ADR 0003) ----------
+
+
+class TreatmentCreate(BaseModel):
+    house_id: uuid.UUID
+    medicine_name: str = Field(min_length=1, max_length=100)
+    dose: str = Field(default="", max_length=500)
+    start_date: date
+    end_date: date
+    withdrawal_days: int = Field(ge=0, le=365)
+    notes: str = Field(default="", max_length=500)
+
+
+class TreatmentUpdate(BaseModel):
+    medicine_name: str | None = Field(default=None, min_length=1, max_length=100)
+    dose: str | None = Field(default=None, max_length=500)
+    start_date: date | None = None
+    end_date: date | None = None
+    withdrawal_days: int | None = Field(default=None, ge=0, le=365)
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class TreatmentOut(ORMModel):
+    id: uuid.UUID
+    house_id: uuid.UUID
+    house_name: str
+    medicine_name: str
+    dose: str
+    start_date: date
+    end_date: date
+    withdrawal_days: int
+    notes: str
+    sellable_from: date
+    # GIVING (medicine being given), WITHDRAWAL (eggs withheld), FINISHED, or PLANNED.
+    phase: Literal["PLANNED", "GIVING", "WITHDRAWAL", "FINISHED"]

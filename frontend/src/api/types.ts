@@ -18,6 +18,8 @@ export interface House {
   capacity: number
   is_active: boolean
   active_flock: Flock | null
+  /** Eggs laid today are withheld until this day (treatment withdrawal period). */
+  withdrawal_until?: string | null
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -93,4 +95,18 @@ export interface Vaccination {
   done_at: string | null
   done_by_name: string | null
   done_note: string
+}
+
+export interface Treatment {
+  id: string
+  house_id: string
+  house_name: string
+  medicine_name: string
+  dose: string
+  start_date: string
+  end_date: string
+  withdrawal_days: number
+  notes: string
+  sellable_from: string
+  phase: 'PLANNED' | 'GIVING' | 'WITHDRAWAL' | 'FINISHED'
 }

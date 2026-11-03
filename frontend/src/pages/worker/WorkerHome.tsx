@@ -105,6 +105,14 @@ export default function WorkerHome() {
                   ? `${formatNumber(flock.live_birds)} ekor hidup`
                   : 'Belum ada flock aktif'}
               </span>
+              {house.withdrawal_until && (
+                <>
+                  <br />
+                  <span className="badge bad">
+                    Masa henti obat s/d {formatDate(house.withdrawal_until)}
+                  </span>
+                </>
+              )}
             </span>
             {status ? (
               <span className={`badge ${status.badge}`}>{status.text}</span>
